@@ -1,11 +1,12 @@
 Package: bayesmetaipd
-Title: Bayesian Random-Effects Meta-Analysis for IPD (Logistic)
-Version: 0.1.1
+Title: Bayesian Random-Effects Meta-Analysis for IPD and AD (Logistic)
+Version: 0.2.0
 Authors@R: person("Yuan", "Zhou", email = "yuanzhouu@users.noreply.github.com", role = c("aut", "cre"))
-Description: Fits a Bayesian hierarchical random-effects meta-analysis model
-    using individual participant data (IPD) with a logistic observation model.
-    Default settings reproduce the Simulation Study 2 Benchmark results from
-    Kim et al. (Bayesian-Meta supplementary materials).
+Description: Fits Bayesian hierarchical random-effects meta-analysis models
+    using individual participant data (IPD) and aggregate data (AD) with a
+    logistic observation model. Default settings reproduce Simulation Study 2
+    Benchmark and IPD+AD results from Kim et al. (Bayesian-Meta supplementary
+    materials).
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

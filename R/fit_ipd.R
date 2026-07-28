@@ -325,12 +325,23 @@ reproduce_sim2_benchmark <- function(..., compare_official = FALSE) {
 
 #' @export
 print.bayesmetaipd_fit <- function(x, ...) {
-  cat("Bayesian IPD random-effects meta-analysis (logistic)\n")
+  if (!is.null(x$settings$J) && !is.null(x$settings$K)) {
+    cat("Bayesian IPD+AD random-effects meta-analysis (logistic)\n")
+  } else {
+    cat("Bayesian IPD random-effects meta-analysis (logistic)\n")
+  }
   cat(sprintf(
     "  Draws: %d (after burn-in %d)\n",
     x$settings$mainrun, x$settings$burnin
   ))
-  cat(sprintf("  Studies L=%d, n=%d, p=%d\n", x$settings$L, x$settings$n, x$settings$p))
+  if (!is.null(x$settings$J) && !is.null(x$settings$K)) {
+    cat(sprintf(
+      "  Studies L=%d (J=%d IPD, K=%d AD), n=%d, p=%d\n",
+      x$settings$L, x$settings$J, x$settings$K, x$settings$n, x$settings$p
+    ))
+  } else {
+    cat(sprintf("  Studies L=%d, n=%d, p=%d\n", x$settings$L, x$settings$n, x$settings$p))
+  }
   cat("  Posterior mean of mu:\n")
   print(colMeans(x$posterior_mu))
   invisible(x)

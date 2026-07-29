@@ -2,7 +2,7 @@
 #
 # Install from GitHub:
 #   install.packages("remotes")
-#   remotes::install_github("yuanzhouu/bayesmeta")
+#   remotes::install_github("yuanzhouu/bayesmetaipd")
 #
 # Quick start:
 #   library(bayesmetaipd)

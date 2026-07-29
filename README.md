@@ -15,7 +15,7 @@ Bayesian random-effects meta-analysis for **logistic** outcomes using
 
 ```r
 install.packages("remotes")
-remotes::install_github("yuanzhouu/bayesmeta")
+remotes::install_github("yuanzhouu/bayesmetaipd")
 ```
 
 

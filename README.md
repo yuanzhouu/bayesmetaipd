@@ -1,5 +1,9 @@
 ﻿# bayesmetaipd
 
+<p align="center">
+  <img src="man/figures/logo.png" alt="bayesmetaipd logo" width="180"/>
+</p>
+
 Bayesian random-effects meta-analysis for **logistic** outcomes using
 **individual participant data (IPD)** and **aggregate data (AD)**.
 

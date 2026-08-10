@@ -325,16 +325,35 @@ reproduce_sim2_benchmark <- function(..., compare_official = FALSE) {
 
 #' @export
 print.bayesmetaipd_fit <- function(x, ...) {
-  if (!is.null(x$settings$J) && !is.null(x$settings$K)) {
-    cat("Bayesian IPD+AD random-effects meta-analysis (logistic)\n")
+  outcome <- x$settings$outcome
+  if (is.null(outcome)) outcome <- "logistic"
+  has_ad <- !is.null(x$settings$J) && !is.null(x$settings$K) &&
+    isTRUE(x$settings$K > 0)
+  if (identical(outcome, "gaussian_application")) {
+    lab <- if (has_ad) {
+      "Application continuous IPD+AD meta-analysis"
+    } else {
+      "Application continuous IPD meta-analysis"
+    }
+    cat(lab, "\n", sep = "")
+  } else if (has_ad) {
+    cat(sprintf("Bayesian IPD+AD random-effects meta-analysis (%s)\n", outcome))
   } else {
-    cat("Bayesian IPD random-effects meta-analysis (logistic)\n")
+    cat(sprintf("Bayesian IPD random-effects meta-analysis (%s)\n", outcome))
   }
   cat(sprintf(
     "  Draws: %d (after burn-in %d)\n",
     x$settings$mainrun, x$settings$burnin
   ))
-  if (!is.null(x$settings$J) && !is.null(x$settings$K)) {
+  if (identical(outcome, "gaussian_application")) {
+    jt1 <- if (is.null(x$settings$J_type1)) 0L else x$settings$J_type1
+    jt2 <- if (is.null(x$settings$J_type2)) 0L else x$settings$J_type2
+    jt3 <- if (is.null(x$settings$J_type3)) 0L else x$settings$J_type3
+    cat(sprintf(
+      "  Studies L=%d (IPD=%d, type1=%d, type2=%d, type3=%d), p=%d\n",
+      x$settings$L, x$settings$J, jt1, jt2, jt3, x$settings$p
+    ))
+  } else if (has_ad) {
     cat(sprintf(
       "  Studies L=%d (J=%d IPD, K=%d AD), n=%d, p=%d\n",
       x$settings$L, x$settings$J, x$settings$K, x$settings$n, x$settings$p
@@ -344,5 +363,8 @@ print.bayesmetaipd_fit <- function(x, ...) {
   }
   cat("  Posterior mean of mu:\n")
   print(colMeans(x$posterior_mu))
+  if (!is.null(x$posterior_sig2)) {
+    cat(sprintf("  Posterior mean of sig2: %s\n", format(mean(x$posterior_sig2), digits = 4)))
+  }
   invisible(x)
 }

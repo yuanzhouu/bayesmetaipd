@@ -4,14 +4,21 @@
   <img src="man/figures/logo.png" alt="bayesmetaipd logo" width="180"/>
 </p>
 
-Bayesian random-effects meta-analysis for **logistic** outcomes using
-**individual participant data (IPD)** and **aggregate data (AD)**.
+Bayesian random-effects meta-analysis for **logistic** (Simulation Study 2) and
+**continuous Application** outcomes using **individual participant data (IPD)**
+and **aggregate data (AD)**.
 
 
 | Function | What it does |
 |----------|----------------|
-| `fit_ipd()` | IPD-only Benchmark (all studies as IPD) |
-| `fit_ipd_ad()` | Proposed IPD + AD analysis with density-ratio adjustment |
+| `fit_ipd()` | Logistic IPD-only Benchmark (Simulation 2) |
+| `fit_ipd_ad()` | Logistic IPD + AD with density-ratio adjustment (Simulation 2) |
+| `fit_ipd_gaussian()` | Application continuous IPD-only (study-specific \(\sigma_l^2\)) |
+| `fit_ipd_ad_gaussian()` | Application continuous IPD + Type1/2/3 AD |
+| `example_application_data()` | Tiny synthetic Application-style demo data |
+
+> Real I-WIP Application CSVs are **not** redistributed (not public in the
+> upstream repo). Pass your own prepared IPD / AD objects.
 
 ---
 
@@ -30,62 +37,53 @@ remotes::install_github("yuanzhouu/bayesmetaipd")
 ```r
 library(bayesmetaipd)
 
-# IPD-only Benchmark (Simulation 2, rep_1 defaults)
+# Logistic — Simulation 2 (bundled data defaults)
 fit <- fit_ipd()
-colMeans(fit$posterior_mu)
-
-# IPD + AD (Simulation 2 proposed method)
 fit_ad <- fit_ipd_ad()
-colMeans(fit_ad$posterior_mu)
 
+# Continuous — Application engine (supply your data)
+toy <- example_application_data()
+fit_g <- fit_ipd_gaussian(toy$ipd, burnin = 100, mainrun = 100, verbose = FALSE)
+fit_gad <- fit_ipd_ad_gaussian(
+  ipd = toy$ipd,
+  ad_type1 = toy$ad_type1,
+  ad_type2 = toy$ad_type2,
+  ad_type3 = toy$ad_type3,
+  burnin = 50, mainrun = 50, verbose = FALSE,
+  tau_update_after = 10L
+)
+colMeans(fit_gad$posterior_mu)
 ```
-> **Note.** Full default runs use 10,000 burn-in + 10,000 main iterations and can take several minutes (IPD) to about an hour (IPD+AD).
 
 ---
 
-## Custom data
+## Application data shape
 
-**IPD only** — covariate array `X` (`L × n × p`) and binary responses `Y` (`L × n`):
+**IPD** — list of studies `list(y, X)` with Application coding
+`(bmi_cat1, bmi_cat2, bmi_cat3, b_wt, bmi_cat1.trt, bmi_cat2.trt, bmi_cat3.trt)`,
+or a data frame via `as_application_ipd()`.
 
-```r
-fit <- fit_ipd(X = my_X, Y = my_Y, seed = 1)
-```
+**Type1 AD** — `data.frame(beta_hat, sqrt_hat_V)` bridged to coefficient 7.
 
-**IPD + AD** — also supply AD summaries and an IPD indicator:
+**Type2 AD** — proportions `p_01…p_13` plus `beta_hat`, `sqrt_hat_V`.
 
-```r
-fit <- fit_ipd_ad(
-  X = my_X,
-  Y = my_Y,
-  beta_mat = my_beta,       # L x p working-model estimates
-  V_beta_cube = my_V,       # L x p x p working variances
-  is_ipd = my_is_ipd,       # length L; 1 = IPD, 0 = AD
-  seed = 1
-)
-```
-
+**Type3 AD** — list with `betahat`/`se` (`J×6`), `use_drm`, `hat_tau`,
+`hat_gamma_tau`, and lists `Design_X`, `nu_X`, `threshold`, `DRM_X`
+(columns `int`, `DRM_X_type3`, `a_n`).
 
 ---
 
 ## Model (brief)
 
-Hierarchical logistic random-effects model:
+**Logistic (Sim2)** — Bernoulli–logit IPD, hierarchical \(\theta_l \sim N(\mu,\Sigma)\).
 
-$$
-\begin{aligned}
-y_{li} \mid X_{li}, \theta_l &\sim \mathrm{Bernoulli}\!\bigl(\mathrm{logit}^{-1}(X_{li}^\top \theta_l)\bigr) \\
-\theta_l \mid \mu, \Sigma &\sim \mathcal{N}(\mu, \Sigma)
-\end{aligned}
-$$
+**Application continuous** — Gaussian IPD with study-specific \(\sigma_l^2\)
+(truncated-normal prior), Gibbs \(\theta_l\) for IPD, MH bridges for Type1/2/3 AD
+(Type3 uses normal-CDF excess-weight thresholds + optional density ratio).
 
-- **IPD-only:** Metropolis–Hastings for each $\theta_l$, then Gibbs for $(\mu, \Sigma)$.
-- **IPD+AD:** same random-effects layer, plus a moment bridge from AD working-model estimates and a density-ratio adjustment for covariate shift.
-
-See also the original code and data in [hang-kim-stat/Bayesian-Meta](https://github.com/hang-kim-stat/Bayesian-Meta).
+See [hang-kim-stat/Bayesian-Meta](https://github.com/hang-kim-stat/Bayesian-Meta).
 
 ---
-
-
 
 ## License
 

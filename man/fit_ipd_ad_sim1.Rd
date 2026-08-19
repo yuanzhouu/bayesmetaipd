@@ -30,7 +30,8 @@ fit_ipd_ad_sim1(
   nu0 = 0.1,
   phi0 = 0.1,
   seed = 1001L,
-  verbose = TRUE
+  verbose = TRUE,
+  engine = c("r", "cpp")
 )
 }
 \arguments{
@@ -74,6 +75,9 @@ fit_ipd_ad_sim1(
 \item{seed}{Integer RNG seed. Default \code{1001}.}
 
 \item{verbose}{Logical; print progress every 1000 iterations.}
+
+\item{engine}{\code{"r"} (default) is the official-style R sampler.
+\code{"cpp"} uses the faster Rcpp inner loop (same model, not bit-identical).}
 }
 \value{
 A list of class \code{bayesmetaipd_fit} with \code{posterior_mu},

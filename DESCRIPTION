@@ -1,6 +1,6 @@
 Package: bayesmetaipd
 Title: Bayesian Random-Effects Meta-Analysis for IPD and AD
-Version: 0.6.0
+Version: 0.7.0
 Authors@R: person("Yuan", "Zhou", email = "yuanzhouu@users.noreply.github.com", role = c("aut", "cre"))
 Description: Fits Bayesian hierarchical random-effects meta-analysis models
     using individual participant data (IPD) and aggregate data (AD). Supports
@@ -22,7 +22,12 @@ Imports:
     MCMCpack,
     truncnorm,
     stats,
-    utils
+    utils,
+    Rcpp
+LinkingTo:
+    Rcpp,
+    RcppArmadillo
+SystemRequirements: C++17
 Suggests:
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

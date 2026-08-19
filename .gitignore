@@ -5,3 +5,9 @@
 *.Rcheck
 *.tar.gz
 .DS_Store
+src/*.o
+src/*.so
+src/*.dll
+src/*.exp
+src/*.lib
+src/*.pdb

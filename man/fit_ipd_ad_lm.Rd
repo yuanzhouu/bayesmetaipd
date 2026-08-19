@@ -36,7 +36,8 @@ fit_ipd_ad_lm(
   Sigma_init = NULL,
   sig2_init = 1,
   seed = 1001L,
-  verbose = TRUE
+  verbose = TRUE,
+  engine = c("r", "cpp")
 )
 }
 \arguments{
@@ -81,6 +82,9 @@ Default: all except intercept.}
 \item{seed}{RNG seed.}
 
 \item{verbose}{Print progress.}
+
+\item{engine}{\code{"r"} (default) R sampler; \code{"cpp"} faster Rcpp loop
+(same model, not bit-identical).}
 }
 \value{
 A \code{bayesmetaipd_fit} object.

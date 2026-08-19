@@ -315,6 +315,8 @@ sim1_as_formula_data <- function() {
 #' @param mu_init,Sigma_init,sig2_init Starting values.
 #' @param seed RNG seed. `NULL` leaves RNG unchanged.
 #' @param verbose Progress printing.
+#' @param engine `"r"` (default) R sampler; `"cpp"` Rcpp inner loop (same model,
+#'   not bit-identical).
 #'
 #' @return A `bayesmetaipd_fit` with `posterior_mu` (columns = full-model terms),
 #'   `posterior_Sigma_diag`, `posterior_sig2`, `call`, `settings`.
@@ -367,7 +369,9 @@ fit_ipd_ad_lm <- function(formula,
                           Sigma_init = NULL,
                           sig2_init = 1,
                           seed = 1001L,
-                          verbose = TRUE) {
+                          verbose = TRUE,
+                          engine = c("r", "cpp")) {
+  engine <- match.arg(engine)
   ipd_prep <- prepare_ipd_lm(formula, ipd, study)
   ipd_st <- ipd_prep$studies
   J <- length(ipd_st)
@@ -578,6 +582,99 @@ fit_ipd_ad_lm <- function(formula,
     list(bar = apply(q, 2, mean), S = stats::var(q) / nrow(q))
   }
 
+  if (identical(engine, "cpp")) {
+    all_st <- c(t1, t2, t3)
+    theta_ad0 <- rbind(theta_t1, theta_t2, theta_t3)
+    alpha_rows <- function(a, n) {
+      if (n == 0L) {
+        return(matrix(numeric(), nrow = 0L, ncol = p_alpha))
+      }
+      a[seq_len(n), , drop = FALSE]
+    }
+    alpha_ad0 <- rbind(
+      alpha_rows(alpha_t1, K1),
+      alpha_rows(alpha_t2, K2),
+      alpha_rows(alpha_t3, K3)
+    )
+    if (verbose) {
+      message(sprintf(
+        "Starting formula IPD+AD MCMC (C++): %d iters; J=%d IPD, nested=%d, subgroup=%d, partial=%d, p=%d",
+        n_iter, J, K1, K2, K3, p_theta
+      ))
+    }
+    cpp_out <- lm_mcmc_cpp(
+      X_ipd = lapply(ipd_st, function(st) unname(as.matrix(st$X))),
+      y_ipd = lapply(ipd_st, function(st) as.numeric(st$y)),
+      X_ad = lapply(all_st, function(st) unname(as.matrix(st$X))),
+      Z_ad = lapply(all_st, function(st) unname(as.matrix(st$Z))),
+      drm_ad = lapply(all_st, function(st) unname(as.matrix(st$drm_psi))),
+      V_ad = lapply(all_st, function(st) unname(as.matrix(st$V))),
+      beta_tilde = lapply(all_st, function(st) as.numeric(st$beta_tilde)),
+      reported = lapply(all_st, function(st) as.integer(st$reported - 1L)),
+      hat_tau = vapply(all_st, `[[`, numeric(1), "hat_tau"),
+      hat_gamma = vapply(all_st, `[[`, numeric(1), "hat_gamma"),
+      theta_ipd0 = unname(theta_mat_IPD),
+      theta_ad0 = unname(theta_ad0),
+      beta_ad0 = c(beta_t1, beta_t2, beta_t3),
+      alpha0 = unname(alpha_ad0),
+      tau0 = as.numeric(c(tau_t1, tau_t2, tau_t3)),
+      extra_theta = as.logical(c(rep(FALSE, K1), rep(FALSE, K2), rep(TRUE, K3))),
+      mu0 = as.numeric(mu_vec),
+      Sigma0 = unname(Sigma_theta_mat),
+      sig2 = sig2,
+      invLambda = unname(invLambda_theta),
+      Phi0 = unname(Phi0),
+      n_iter = as.integer(n_iter),
+      burnin = as.integer(burnin),
+      step_theta = step_theta,
+      step_alpha = step_alpha,
+      step_tau = step_tau,
+      nu0 = nu0,
+      use_drm = isTRUE(use_drm),
+      drm_cov_col = as.integer(drm_cov_col - 1L),
+      verbose = verbose
+    )
+    mu_keep <- cpp_out$posterior_mu
+    colnames(mu_keep) <- xnames
+    sig_keep <- cpp_out$posterior_Sigma_diag
+    colnames(sig_keep) <- xnames
+    out <- list(
+      posterior_mu = mu_keep,
+      posterior_Sigma_diag = sig_keep,
+      posterior_sig2 = as.numeric(cpp_out$posterior_sig2),
+      call = match.call(),
+      settings = list(
+        burnin = burnin,
+        mainrun = mainrun,
+        step_theta = step_theta,
+        step_alpha = step_alpha,
+        step_tau = step_tau,
+        lambda = lambda,
+        nu0 = nu0,
+        phi0 = phi0,
+        seed = seed,
+        L = L,
+        J = J,
+        K = K,
+        J_type1 = K1,
+        J_type2 = K2,
+        J_type3 = K3,
+        n = mean(vapply(ipd_st, `[[`, numeric(1), "n")),
+        p = p_theta,
+        coef_names = xnames,
+        formula = formula,
+        nested_formula = nested_formula,
+        drm_formula = drm_formula,
+        use_drm = isTRUE(use_drm),
+        outcome = "gaussian_lm",
+        engine = "cpp",
+        used_default_data = FALSE
+      )
+    )
+    class(out) <- c("bayesmetaipd_fit", "list")
+    return(out)
+  }
+
   mh_ad <- function(studies, theta_mat, beta_list, alpha_mat, tau_vec, extra_theta_in_alpha) {
     for (k in seq_along(studies)) {
       st <- studies[[k]]
@@ -759,6 +856,7 @@ fit_ipd_ad_lm <- function(formula,
       drm_formula = drm_formula,
       use_drm = isTRUE(use_drm),
       outcome = "gaussian_lm",
+      engine = "r",
       used_default_data = FALSE
     )
   )

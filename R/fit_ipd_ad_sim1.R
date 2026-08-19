@@ -119,6 +119,10 @@ load_sim1_ipdad_rep1 <- function() {
 #' @param seed Integer seed. Default `1001`. With bundled data this restores
 #'   `sim1_ipdad_rep1$random_seed`. `NULL` leaves RNG unchanged.
 #' @param verbose Print progress every 1000 iterations.
+#' @param engine `"r"` (default) uses the official-style R sampler (bit-identical
+#'   to `Code/Simulation_1/2_IPD-AD.R` when seeds match). `"cpp"` uses the
+#'   RcppArmadillo inner loop (same model, faster; multivariate draws use a
+#'   Cholesky / Bartlett implementation so chains are not bit-identical to R).
 #'
 #' @return A `bayesmetaipd_fit` with `posterior_mu`, `posterior_Sigma_diag`,
 #'   `posterior_sig2` (vector of shared residual variance), `call`, `settings`.
@@ -142,15 +146,17 @@ fit_ipd_ad_sim1 <- function(X = NULL,
                             step_theta = 0.2,
                             step_alpha = 0.01,
                             step_tau = 0.02,
-                            lambda = 1e4,
-                            nu0 = 0.1,
-                            phi0 = 0.1,
-                            seed = 1001L,
-                            verbose = TRUE) {
+    lambda = 1e4,
+    nu0 = 0.1,
+    phi0 = 0.1,
+    seed = 1001L,
+    verbose = TRUE,
+    engine = c("r", "cpp")) {
   using_default_data <- is.null(X) && is.null(Y) &&
     is.null(beta_mat) && is.null(V_beta_cube) && is.null(type_vec)
   bundled_random_seed <- NULL
   true_kappa <- 1
+  engine <- match.arg(engine)
 
   if (using_default_data) {
     dat <- load_sim1_ipdad_rep1()
@@ -311,6 +317,79 @@ fit_ipd_ad_sim1 <- function(X = NULL,
   }
 
   n_iter <- burnin + mainrun
+
+  if (identical(engine, "cpp")) {
+    if (verbose) {
+      message(sprintf(
+        "Starting Sim1 IPD+AD MCMC (C++): %d iters (%d burn-in + %d main); J=%d IPD, type1=%d, type2=%d, type3=%d",
+        n_iter, burnin, mainrun, J, length(idx_t1), length(idx_t2), length(idx_t3)
+      ))
+    }
+    X_ipd_list <- lapply(seq_len(J), function(j) unname(X_IPD[j, , ]))
+    X_ref_list <- lapply(tilde_D_x, function(m) unname(as.matrix(m)))
+    Z_ref_list <- lapply(tilde_D_x_subgroup, function(m) unname(as.matrix(m)))
+    V_list <- lapply(seq_len(K), function(k) unname(V_tilde_cube[k, , ]))
+    cpp_out <- sim1_mcmc_cpp(
+      X_ipd = X_ipd_list,
+      Y_ipd = unname(Y_mat),
+      X_ref = X_ref_list,
+      Z_ref = Z_ref_list,
+      beta_tilde = unname(beta_tilde_mat),
+      V_list = V_list,
+      idx_t1 = as.integer(idx_t1 - 1L),
+      idx_t2 = as.integer(idx_t2 - 1L),
+      idx_t3 = as.integer(idx_t3 - 1L),
+      theta_ipd0 = unname(theta_mat_IPD),
+      theta_ad0 = unname(theta_mat_AD),
+      beta_ad0 = unname(beta_mat_AD),
+      mu0 = as.numeric(mu_vec),
+      Sigma0 = unname(Sigma_theta_mat),
+      sig2 = sig2,
+      tau0 = as.numeric(tau_vec),
+      alpha0 = unname(alpha_mat),
+      hat_tau = as.numeric(hat_tau_vec),
+      hat_gamma = as.numeric(hat_Gamma_tau_vec),
+      invLambda = unname(invLambda_theta),
+      Phi0 = unname(Phi0),
+      n_iter = as.integer(n_iter),
+      burnin = as.integer(burnin),
+      step_theta = step_theta,
+      step_alpha = step_alpha,
+      step_tau = step_tau,
+      nu0 = nu0,
+      verbose = verbose
+    )
+    out <- list(
+      posterior_mu = cpp_out$posterior_mu,
+      posterior_Sigma_diag = cpp_out$posterior_Sigma_diag,
+      posterior_sig2 = as.numeric(cpp_out$posterior_sig2),
+      call = match.call(),
+      settings = list(
+        burnin = burnin,
+        mainrun = mainrun,
+        step_theta = step_theta,
+        step_alpha = step_alpha,
+        step_tau = step_tau,
+        lambda = lambda,
+        nu0 = nu0,
+        phi0 = phi0,
+        seed = seed,
+        L = L,
+        J = J,
+        K = K,
+        J_type1 = length(idx_t1),
+        J_type2 = length(idx_t2),
+        J_type3 = length(idx_t3),
+        n = n_sample,
+        p = p_theta,
+        outcome = "gaussian_sim1",
+        engine = "cpp",
+        used_default_data = using_default_data
+      )
+    )
+    class(out) <- c("bayesmetaipd_fit", "list")
+    return(out)
+  }
   draw_mu <- array(0, c(n_iter, p_theta))
   draw_Sigma_theta <- array(0, c(n_iter, p_theta))
   draw_sig2 <- rep(0, n_iter)
@@ -628,6 +707,7 @@ fit_ipd_ad_sim1 <- function(X = NULL,
       n = n_sample,
       p = p_theta,
       outcome = "gaussian_sim1",
+      engine = "r",
       used_default_data = using_default_data
     )
   )

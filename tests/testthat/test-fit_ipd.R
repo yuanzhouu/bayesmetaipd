@@ -83,6 +83,19 @@ test_that("short fit_ipd_ad_sim1 run returns expected structure", {
   expect_true(is.finite(sum(fit$posterior_mu)))
 })
 
+test_that("short fit_ipd_ad_sim1 C++ engine returns expected structure", {
+  fit <- fit_ipd_ad_sim1(
+    burnin = 1, mainrun = 2, verbose = FALSE, seed = 1001L, engine = "cpp"
+  )
+  expect_s3_class(fit, "bayesmetaipd_fit")
+  expect_equal(fit$settings$engine, "cpp")
+  expect_equal(dim(fit$posterior_mu), c(2, 4))
+  expect_equal(dim(fit$posterior_Sigma_diag), c(2, 4))
+  expect_equal(length(fit$posterior_sig2), 2)
+  expect_true(all(fit$posterior_sig2 > 0))
+  expect_true(is.finite(sum(fit$posterior_mu)))
+})
+
 test_that("sim1_as_formula_data matches cube dimensions", {
   d <- sim1_as_formula_data()
   expect_equal(nrow(d$ipd), 10 * 200)
@@ -123,6 +136,35 @@ test_that("fit_ipd_ad_lm formula interface short run", {
   expect_equal(fit$settings$J_type1, 10)
   expect_equal(fit$settings$J_type2, 10)
   expect_equal(fit$settings$J_type3, 10)
+  expect_true(all(fit$posterior_sig2 > 0))
+  expect_true(is.finite(sum(fit$posterior_mu)))
+})
+
+test_that("fit_ipd_ad_lm C++ engine short run", {
+  d <- sim1_as_formula_data()
+  fit <- fit_ipd_ad_lm(
+    formula = d$formula,
+    ipd = d$ipd,
+    study = d$study,
+    nested_formula = d$nested_formula,
+    ad_nested = d$ad_nested,
+    nested_reported = d$nested_reported,
+    subgroup = d$subgroup,
+    ad_subgroup = d$ad_subgroup,
+    partial_terms = d$partial_terms,
+    ad_partial = d$ad_partial,
+    drm_formula = d$drm_formula,
+    theta_init_ipd = d$theta_init_ipd,
+    theta_init_nested = d$theta_init_nested,
+    theta_init_subgroup = d$theta_init_subgroup,
+    theta_init_partial = d$theta_init_partial,
+    mu_init = d$mu_init,
+    sig2_init = d$sig2_init,
+    burnin = 1, mainrun = 2, verbose = FALSE, seed = 2L, engine = "cpp"
+  )
+  expect_equal(fit$settings$engine, "cpp")
+  expect_equal(dim(fit$posterior_mu), c(2, 4))
+  expect_equal(colnames(fit$posterior_mu), c("(Intercept)", "X1", "X2", "X1:X2"))
   expect_true(all(fit$posterior_sig2 > 0))
   expect_true(is.finite(sum(fit$posterior_mu)))
 })

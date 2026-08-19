@@ -15,7 +15,7 @@ and **aggregate data (AD)**.
 | `fit_ipd()` | Logistic IPD-only Benchmark (Simulation 2) |
 | `fit_ipd_ad()` | Logistic IPD + AD with density-ratio adjustment (Simulation 2) |
 | `fit_ipd_ad_sim1()` | Gaussian IPD + Type1/2/3 AD (Simulation 1 cube API) |
-| `fit_ipd_ad_lm()` | **Formula API**: full model + nested / subgroup / partial AD |
+| `fit_ipd_ad_lm()` | **Formula API** (final Sim1 interface): full model + nested / subgroup / partial AD; `engine = "r"` or `"cpp"` |
 | `sim1_as_formula_data()` | Convert Sim1 replicate 1 into formula-style tables |
 | `fit_ipd_gaussian()` | Application continuous IPD-only (study-specific \(\sigma_l^2\)) |
 | `fit_ipd_ad_gaussian()` | Application continuous IPD + Type1/2/3 AD |
@@ -61,7 +61,8 @@ fit_lm <- fit_ipd_ad_lm(
   partial_terms = c("X2", "X1:X2"), # Type 3
   ad_partial = d$ad_partial,
   drm_formula = ~ X1,
-  burnin = 100, mainrun = 100, verbose = FALSE
+  burnin = 100, mainrun = 100, verbose = FALSE,
+  engine = "cpp"                    # optional; default is "r"
 )
 colMeans(fit_lm$posterior_mu)
 

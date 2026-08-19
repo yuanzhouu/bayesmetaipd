@@ -336,6 +336,10 @@ print.bayesmetaipd_fit <- function(x, ...) {
       "Application continuous IPD meta-analysis"
     }
     cat(lab, "\n", sep = "")
+  } else if (identical(outcome, "gaussian_sim1")) {
+    cat("Simulation 1 continuous IPD+AD meta-analysis\n")
+  } else if (identical(outcome, "gaussian_lm")) {
+    cat("Linear IPD+AD meta-analysis (formula interface)\n")
   } else if (has_ad) {
     cat(sprintf("Bayesian IPD+AD random-effects meta-analysis (%s)\n", outcome))
   } else {
@@ -351,6 +355,14 @@ print.bayesmetaipd_fit <- function(x, ...) {
     jt3 <- if (is.null(x$settings$J_type3)) 0L else x$settings$J_type3
     cat(sprintf(
       "  Studies L=%d (IPD=%d, type1=%d, type2=%d, type3=%d), p=%d\n",
+      x$settings$L, x$settings$J, jt1, jt2, jt3, x$settings$p
+    ))
+  } else if (identical(outcome, "gaussian_lm") || identical(outcome, "gaussian_sim1")) {
+    jt1 <- if (is.null(x$settings$J_type1)) 0L else x$settings$J_type1
+    jt2 <- if (is.null(x$settings$J_type2)) 0L else x$settings$J_type2
+    jt3 <- if (is.null(x$settings$J_type3)) 0L else x$settings$J_type3
+    cat(sprintf(
+      "  Studies L=%d (IPD=%d, nested=%d, subgroup=%d, partial=%d), p=%d\n",
       x$settings$L, x$settings$J, jt1, jt2, jt3, x$settings$p
     ))
   } else if (has_ad) {

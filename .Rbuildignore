@@ -8,3 +8,4 @@
 ^bayesmetaipd\.Rcheck$
 ^bayesmetaipd.*\.tar\.gz$
 ^bayesmetaipd.*\.tgz$
+^tools$

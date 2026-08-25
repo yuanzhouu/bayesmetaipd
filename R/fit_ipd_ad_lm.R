@@ -511,7 +511,9 @@ fit_ipd_ad_lm <- function(formula,
   K2 <- length(t2)
   K3 <- length(t3)
   K <- K1 + K2 + K3
-  if (K < 1L) stop("Provide at least one of `ad_nested`, `ad_subgroup`, `ad_partial`.", call. = FALSE)
+  if (K < 1L) {
+    warning("No AD data provided (`ad_nested`, `ad_subgroup`, and `ad_partial` are all NULL). Running in IPD-only mode.", call. = FALSE)
+  }
   L <- J + K
   if ((nu0 + L) < p_theta) {
     stop("Need nu0 + L >= p for Inverse-Wishart. Got nu0+L=", nu0 + L, ", p=", p_theta, ".", call. = FALSE)

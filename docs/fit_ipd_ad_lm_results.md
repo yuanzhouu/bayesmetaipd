@@ -9,25 +9,13 @@
 
 ## 1. Core Function Documentation: `fit_ipd_ad_lm`
 
-### 1.1 Mathematical Model and Theoretical Background
+### 1.1 Three Types of Aggregate Data (AD)
 
-In evidence synthesis, researchers frequently encounter heterogeneous meta-analytic settings where **Individual Participant Data (IPD)** are available only from a subset of studies, while the remaining studies report various forms of **Aggregate Data (AD)**. The [`fit_ipd_ad_lm()`](file:///C:/Users/Yuan%20Zhou/OneDrive%20-%20University%20of%20Cincinnati/UCsemester/survey_sampling/paper_repo/bayesmetaipd/R/fit_ipd_ad_lm.R) function implements a general Bayesian hierarchical random-effects model for continuous Gaussian outcomes. It bridges full-specification IPD regression models with three primary AD reporting paradigms:
+In evidence synthesis, researchers frequently encounter heterogeneous meta-analytic settings where **Individual Participant Data (IPD)** are available only from a subset of studies, while the remaining studies report various forms of **Aggregate Data (AD)**. The [`fit_ipd_ad_lm()`](file:///C:/Users/Yuan%20Zhou/OneDrive%20-%20University%20of%20Cincinnati/UCsemester/survey_sampling/paper_repo/bayesmetaipd/R/fit_ipd_ad_lm.R) function bridges full-specification IPD regression models with three primary AD reporting paradigms:
 
-1. **Type 1 AD (Nested Working Model)**: AD studies that fit a reduced or misspecified model omitting interaction terms or higher-order covariates (e.g., publishing coefficients from $Y \sim X_1 + X_2 + X_3$ instead of the true interaction model).
+1. **Type 1 AD (Nested Working Model)**: AD studies that fit a reduced or misspecified model omitting interaction terms or higher-order covariates (e.g., publishing coefficients from $Y \sim X_1 + X_2 + X_3$ instead of the true full interaction model).
 2. **Type 2 AD (Subgroup Means)**: AD studies that report sample means and standard errors across partitions of the covariate space (e.g., $(X_1 > 0 \text{ vs. } \le 0) \times (X_2 = 0 \text{ vs. } 1)$).
 3. **Type 3 AD (Partial Full Model)**: AD studies that fit the correct full model but publish only a subset of estimated coefficients (e.g., reporting treatment and interaction effects while omitting the intercept or baseline covariates).
-
-To address potential population heterogeneity and covariate distribution shifts between AD and IPD studies, the framework incorporates a semi-parametric **Density-Ratio Model (DRM)** via exponential tilting:
-$$\frac{g_l(x)}{g_0(x)} = \exp\bigl(\psi(x)^T \alpha_l\bigr)$$
-where $\alpha_l$ is estimated using moment-matching conditions based on the published AD baseline summary statistics ($\hat{\tau}_l = \bar{X}_{1,l}, \hat{\Gamma}_l = \mathrm{Var}(X_{1,l})/n_l$).
-
-#### Model Formulation:
-- **IPD Study Likelihood** ($j = 1, \dots, J$):
-  $$Y_{ji} = X_{ji}^T \theta_j + \epsilon_{ji}, \quad \epsilon_{ji} \sim \mathcal{N}(0, \sigma^2)$$
-- **Hierarchical Random-Effects Distribution** ($l = 1, \dots, L$ across all IPD and AD studies):
-  $$\theta_l \sim \mathcal{N}_p(\mu, \Sigma)$$
-- **Prior Distributions**:
-  $$\mu \sim \mathcal{N}_p(0, \lambda I_p), \quad \Sigma \sim \text{Inv-Wishart}(\nu_0, \Phi_0 = \phi_0 I_p), \quad \sigma^2 \sim \text{Inv-Gamma}(1, 1)$$
 
 ---
 

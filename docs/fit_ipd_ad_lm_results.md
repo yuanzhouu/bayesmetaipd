@@ -2,7 +2,7 @@
 
 **GitHub Repository**: [https://github.com/yuanzhouu/bayesmetaipd](https://github.com/yuanzhouu/bayesmetaipd)
 
-`bayesmetaipd` is an R package designed for Bayesian hierarchical random-effects meta-analysis combining Individual Participant Data (IPD) and Aggregate Data (AD) across heterogeneous studies for continuous outcomes. Powered by its core engine [`fit_ipd_ad_lm()`](file:///C:/Users/Yuan%20Zhou/OneDrive%20-%20University%20of%20Cincinnati/UCsemester/survey_sampling/paper_repo/bayesmetaipd/R/fit_ipd_ad_lm.R), the package accommodates diverse AD reporting paradigms (nested working models, subgroup means, and partial coefficients) with semi-parametric Density-Ratio Modeling (DRM) for covariate shift adjustment, and features high-performance C++ (Rcpp) acceleration.
+`bayesmetaipd` is an R package designed for Bayesian hierarchical random-effects meta-analysis combining Individual Participant Data (IPD) and Aggregate Data (AD) across heterogeneous studies for continuous outcomes. 
 
 ---
 
@@ -11,11 +11,9 @@
 
 ### 1.1 Three Types of Aggregate Data (AD)
 
-In evidence synthesis, researchers frequently encounter heterogeneous meta-analytic settings where **Individual Participant Data (IPD)** are available only from a subset of studies, while the remaining studies report various forms of **Aggregate Data (AD)**. The [`fit_ipd_ad_lm()`](file:///C:/Users/Yuan%20Zhou/OneDrive%20-%20University%20of%20Cincinnati/UCsemester/survey_sampling/paper_repo/bayesmetaipd/R/fit_ipd_ad_lm.R) function bridges full-specification IPD regression models with three primary AD reporting paradigms:
-
-1. **Type 1 AD (Nested Working Model)**: AD studies that fit a reduced or misspecified model omitting interaction terms or higher-order covariates (e.g., publishing coefficients from $Y \sim X_1 + X_2 + X_3$ instead of the true full interaction model).
-2. **Type 2 AD (Subgroup Means)**: AD studies that report sample means and standard errors across partitions of the covariate space (e.g., $(X_1 > 0 \text{ vs. } \le 0) \times (X_2 = 0 \text{ vs. } 1)$).
-3. **Type 3 AD (Partial Full Model)**: AD studies that fit the correct full model but publish only a subset of estimated coefficients (e.g., reporting treatment and interaction effects while omitting the intercept or baseline covariates).
+1. **Type 1 AD (Nested Working Model)**: AD studies that fit a reduced or misspecified model omitting interaction terms or higher-order covariates.
+2. **Type 2 AD (Subgroup Means)**: AD studies that report sample means and standard errors across partitions of the covariate space.
+3. **Type 3 AD (Partial Full Model)**: AD studies that fit the correct full model but publish only a subset of estimated coefficients.
 
 ---
 
@@ -105,10 +103,6 @@ The function returns an S3 object of class `c("bayesmetaipd_fit", "list")` conta
 
 To evaluate numerical correctness and statistical parity, the R engine of `fit_ipd_ad_lm(..., engine = "r")` was benchmarked against the official Simulation Study 1 implementation (`SimulationData_1.RData`, replicate 1).
 
-- **Official Posterior Benchmark**: `Bayesian-Meta/Output/Simulation_1/2_IPD-AD/RData/rep_1.RData`.
-- **Chain Settings**: Both official and package runs used **10,000 burn-in + 10,000 mainrun iterations** (evaluating the 10,000 post-burn-in draws).
-- **RNG State Clarification**: The official script executed `set.seed(1001)` immediately before `load()` on data objects, altering internal RNG states. The package uses a clean `set.seed(seed)` initialization. Thus, trajectories are not pointwise bit-identical, but sample from the exact same stationary posterior distribution. Four distinct seeds (`1001`, `42`, `2024`, `7`) were tested to examine sample variability.
-
 ---
 
 ### 2.2 Posterior Means Comparison
@@ -175,8 +169,6 @@ To evaluate numerical correctness and statistical parity, the R engine of `fit_i
 
 ### 3.1 Implementation Architecture and Computational Benchmark
 
-High-dimensional MCMC iterations in pure R suffer from interpreter overhead, dynamic type conversions, and memory allocation bottlenecks during repeated matrix inversions and Metropolis-Hastings evaluations.
-
 The C++ backend (`engine = "cpp"`) implements compiled C++ routines using Rcpp and optimized linear algebra routines.
 
 #### Execution Speed Benchmark (20,000 Iterations: 10,000 Burn-in + 10,000 Mainrun)
@@ -185,9 +177,6 @@ The C++ backend (`engine = "cpp"`) implements compiled C++ routines using Rcpp a
 | :--- | :---: | :---: | :---: |
 | **Native R Engine (`engine = "r"`)** | **1241.5 s** | **20.7 min** | $1.0\times$ (Baseline) |
 | **C++ Engine (`engine = "cpp"`)** | **44.0 s** | **0.73 min** | **$\approx 28.2\times$ Faster** |
-
-> [!TIP]
-> The C++ backend reduces the runtime for 20,000 iterations from **over 20 minutes to just 44 seconds**, enabling rapid model prototyping and large-scale simulation studies.
 
 ---
 
@@ -220,17 +209,6 @@ The C++ backend (`engine = "cpp"`) implements compiled C++ routines using Rcpp a
 | $\Sigma_{22}$ | 0.23761 | 0.25567 | 0.25578 | 0.26902 | 0.28277 | 0.26810 | 0.26104 | 0.28996 | 0.25660 |
 | $\Sigma_{33}$ | 0.23583 | 0.24372 | 0.24789 | 0.24166 | 0.24278 | 0.24086 | 0.24309 | 0.25141 | 0.24729 |
 | $\Sigma_{44}$ | 0.40704 | 0.36270 | 0.39590 | 0.33232 | 0.33367 | 0.38721 | 0.37707 | 0.34452 | 0.35578 |
-
----
-
-### 3.3 Seed Sensitivity and Heavy-Tail Variance Analysis
-
-At `seed = 1001`, the C++ posterior mean of $\Sigma_{11}$ is $1.53343$ (compared to official $1.26030$). When evaluating other seeds:
-- At `seed = 2024`, C++ yields $\Sigma_{11} = \mathbf{1.28625}$ (absolute difference only $\mathbf{0.02595}$ vs. official, with SD $0.46896$ vs. official $0.46643$).
-- At `seed = 7`, C++ yields $\Sigma_{11} = \mathbf{1.30506}$ (absolute difference $\mathbf{0.04476}$).
-- At `seed = 42`, C++ yields $\Sigma_{11} = \mathbf{1.32923}$.
-
-**Statistical Explanation**: The diagonal entries of an Inverse-Wishart random matrix possess a heavy right tail, with the posterior SD of $\Sigma_{11}$ being $\approx 0.47$. A single seed occasionally exploring this right tail reflects normal MCMC sampling variance rather than an implementation bias. Across multiple seeds, both engines exhibit identical target distributions and complete statistical parity.
 
 ---
 

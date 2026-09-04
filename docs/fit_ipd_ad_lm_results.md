@@ -171,15 +171,6 @@ To evaluate numerical correctness and statistical parity, the R engine of `fit_i
 
 ---
 
-### 2.4 Statistical Consistency and Findings
-
-1. **Residual Variance $\sigma^2$ Stability**: Across all seeds, $\sigma^2$ estimates are exceptionally stable between $0.9942$ and $0.9952$, matching the official benchmark ($0.99468$) with discrepancies $< 0.0006$.
-2. **High Precision on Slope Parameters ($\mu_{X_1}, \mu_{X_2}, \mu_{X_1 X_2}$)**: Discrepancies versus the official posterior mean are $< 0.03$ on average, which is well within the posterior standard errors ($\approx 0.15 - 0.20$).
-3. **Intercept Behavior ($\mu_0$)**: Because the official mean is close to zero ($0.00015$), relative error is inflated. Across the 4 seeds, R posterior means range from $-0.015$ to $0.122$, which are comfortably within the posterior standard deviation ($\approx 0.25$).
-4. **Covariance Matrix Diagonals ($\text{diag}(\Sigma)$)**: $\Sigma_{11}$ through $\Sigma_{44}$ closely track the official values, reflecting expected Monte Carlo variability under an Inverse-Wishart prior.
-
----
-
 ## 3. C++ (Rcpp) Acceleration and Multi-Seed Parity
 
 ### 3.1 Implementation Architecture and Computational Benchmark

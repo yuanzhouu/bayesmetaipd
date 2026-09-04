@@ -118,7 +118,8 @@ type2_beta_from_theta <- function(theta, p_vec) {
 #' )
 #' colMeans(fit$posterior_mu)
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 fit_ipd_ad_gaussian <- function(ipd,
                                 ad_type1 = NULL,
                                 ad_type2 = NULL,
@@ -624,7 +625,8 @@ fit_ipd_ad_gaussian <- function(ipd,
 #' @param seed Integer seed. Default `1`.
 #' @param n_ipd Number of IPD studies. Default `8`.
 #' @return List with `ipd`, `ad_type1`, `ad_type2`, `ad_type3`.
-#' @export
+#' @keywords internal
+#' @noRd
 example_application_data <- function(seed = 1L, n_ipd = 8L) {
   set.seed(as.integer(seed))
   p <- 7L

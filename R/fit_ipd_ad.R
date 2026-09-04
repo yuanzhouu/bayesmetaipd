@@ -91,7 +91,8 @@ load_sim2_ipdad_rep1 <- function() {
 #' fit_short <- fit_ipd_ad(burnin = 5, mainrun = 10, verbose = FALSE)
 #' str(fit_short$posterior_mu)
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 fit_ipd_ad <- function(X = NULL,
                        Y = NULL,
                        beta_mat = NULL,
@@ -475,7 +476,8 @@ fit_ipd_ad <- function(X = NULL,
 #' attr(fit, "comparison")
 #' }
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 reproduce_sim2_ipdad <- function(..., compare_official = FALSE) {
   fit <- fit_ipd_ad(...)
 

@@ -8,7 +8,7 @@
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-Fits Bayesian hierarchical random-effects meta-analysis models using individual participant data (IPD) and aggregate data (AD). Supports logistic Simulation Study 2 samplers, Simulation Study 1 continuous IPD+AD (nested / subgroup-mean / partial-coefficient AD with density-ratio adjustment), and the continuous Application study engine (study-specific residual variances; AD report Types 1/2/3). Default logistic settings reproduce Simulation Study 2 Benchmark and IPD+AD results from Kim et al. (Bayesian-Meta supplementary materials).
+Fits Bayesian hierarchical random-effects meta-analysis models combining individual participant data (IPD) and aggregate data (AD) for continuous outcomes via 'fit_ipd_ad_lm()'. Accommodates diverse AD reporting paradigms (nested working models, subgroup means, and partial coefficients) with semi-parametric density-ratio modeling (DRM) for covariate shift adjustment and high-performance C++ (Rcpp) acceleration.
 }
 \seealso{
 Useful links:

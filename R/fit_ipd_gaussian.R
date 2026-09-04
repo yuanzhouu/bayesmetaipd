@@ -7,7 +7,8 @@
 #' @param x_cols Character vector of covariate column names when `ipd` is a
 #'   data frame. Default uses Application order.
 #' @return List of `list(y, X, n_l)`.
-#' @export
+#' @keywords internal
+#' @noRd
 as_application_ipd <- function(ipd,
                                study_col = "study_name",
                                y_col = "w_gain",
@@ -98,7 +99,8 @@ as_application_ipd <- function(ipd,
 #' fit <- fit_ipd_gaussian(toy$ipd, burnin = 5, mainrun = 10, verbose = FALSE)
 #' colMeans(fit$posterior_mu)
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 fit_ipd_gaussian <- function(ipd,
                              burnin = 10000L,
                              mainrun = 10000L,

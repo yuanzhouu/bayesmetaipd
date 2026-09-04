@@ -131,7 +131,8 @@ load_sim1_ipdad_rep1 <- function() {
 #' fit_short <- fit_ipd_ad_sim1(burnin = 2, mainrun = 3, verbose = FALSE)
 #' colMeans(fit_short$posterior_mu)
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 fit_ipd_ad_sim1 <- function(X = NULL,
                             Y = NULL,
                             beta_mat = NULL,
@@ -730,7 +731,8 @@ fit_ipd_ad_sim1 <- function(X = NULL,
 #' colMeans(fit$posterior_mu)
 #' }
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 reproduce_sim1_ipdad <- function(...) {
   fit_ipd_ad_sim1(...)
 }

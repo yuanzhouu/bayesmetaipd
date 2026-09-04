@@ -1,4 +1,4 @@
-﻿#' Fit IPD-only Bayesian random-effects meta-analysis (logistic)
+#' Fit IPD-only Bayesian random-effects meta-analysis (logistic)
 #'
 #' Implements the Simulation Study 2 Benchmark sampler: all studies are treated
 #' as individual participant data (IPD), with a logistic observation model and
@@ -51,7 +51,8 @@
 #' fit_short <- fit_ipd(burnin = 20, mainrun = 30, verbose = FALSE)
 #' str(fit_short$posterior_mu)
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 fit_ipd <- function(X = NULL,
                     Y = NULL,
                     theta_init = NULL,
@@ -284,7 +285,8 @@ fit_ipd <- function(X = NULL,
 #' attr(fit, "comparison")
 #' }
 #'
-#' @export
+#' @keywords internal
+#' @noRd
 reproduce_sim2_benchmark <- function(..., compare_official = FALSE) {
   fit <- fit_ipd(...)
 

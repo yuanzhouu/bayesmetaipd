@@ -1,28 +1,17 @@
-﻿# bayesmetaipd
+# bayesmetaipd
 
 <p align="center">
   <img src="man/figures/logo.png" alt="bayesmetaipd logo" width="180"/>
 </p>
 
-Bayesian random-effects meta-analysis for **logistic** (Simulation Study 2),
-**continuous Simulation Study 1** (linear IPD + three AD report types), and
-**continuous Application** outcomes using **individual participant data (IPD)**
-and **aggregate data (AD)**.
+Bayesian hierarchical random-effects meta-analysis combining **Individual Participant Data (IPD)** and **Aggregate Data (AD)** for continuous outcomes via `fit_ipd_ad_lm()`.
 
+The package accommodates three primary aggregate data reporting paradigms:
+1. **Type 1 AD (Nested Working Model)**: AD studies reporting estimates from a reduced or misspecified model (e.g., omitting interaction terms).
+2. **Type 2 AD (Subgroup Means)**: AD studies reporting sample means and standard errors across partitions of the covariate space.
+3. **Type 3 AD (Partial Full Model)**: AD studies fitting the full model but publishing only a subset of estimated coefficients.
 
-| Function | What it does |
-|----------|----------------|
-| `fit_ipd()` | Logistic IPD-only Benchmark (Simulation 2) |
-| `fit_ipd_ad()` | Logistic IPD + AD with density-ratio adjustment (Simulation 2) |
-| `fit_ipd_ad_sim1()` | Gaussian IPD + Type1/2/3 AD (Simulation 1 cube API) |
-| `fit_ipd_ad_lm()` | **Formula API** (final Sim1 interface): full model + nested / subgroup / partial AD; `engine = "r"` or `"cpp"` |
-| `sim1_as_formula_data()` | Convert Sim1 replicate 1 into formula-style tables |
-| `fit_ipd_gaussian()` | Application continuous IPD-only (study-specific \(\sigma_l^2\)) |
-| `fit_ipd_ad_gaussian()` | Application continuous IPD + Type1/2/3 AD |
-| `example_application_data()` | Tiny synthetic Application-style demo data |
-
-> Real I-WIP Application CSVs are **not** redistributed (not public in the
-> upstream repo). Pass your own prepared IPD / AD objects.
+To address potential population heterogeneity and covariate distribution shifts between AD and IPD studies, the framework incorporates a semi-parametric **Density-Ratio Model (DRM)** via exponential tilting, along with high-performance **C++ (Rcpp)** computational acceleration (~28x speedup).
 
 ---
 
@@ -33,85 +22,42 @@ install.packages("remotes")
 remotes::install_github("yuanzhouu/bayesmetaipd")
 ```
 
-
 ---
 
-## Quick start
+## Quick Start
 
 ```r
 library(bayesmetaipd)
 
-# Logistic — Simulation 2 (bundled data defaults)
-fit <- fit_ipd()
-fit_ad <- fit_ipd_ad()
-
-# Continuous — Simulation 1 IPD + Type1/2/3 AD (cube)
-fit_s1 <- fit_ipd_ad_sim1(burnin = 100, mainrun = 100, verbose = FALSE)
-
-# Same model via formulas (full / nested / subgroup / partial)
-d <- sim1_as_formula_data()
-fit_lm <- fit_ipd_ad_lm(
-  formula = d$formula,              # Y ~ X1 * X2
-  ipd = d$ipd,
-  study = "study",
-  nested_formula = ~ X1 + X2,       # Type 1
-  ad_nested = d$ad_nested,
-  subgroup = d$subgroup,            # Type 2
-  ad_subgroup = d$ad_subgroup,
-  partial_terms = c("X2", "X1:X2"), # Type 3
-  ad_partial = d$ad_partial,
-  drm_formula = ~ X1,
-  burnin = 100, mainrun = 100, verbose = FALSE,
-  engine = "cpp"                    # optional; default is "r"
+# Fit Bayesian IPD + AD linear model via formula interface
+fit <- fit_ipd_ad_lm(
+  formula = Y ~ X1 * X2,            # Full IPD regression specification
+  ipd = ipd_df,                     # Individual participant dataset
+  study = "study",                  # Study identifier column
+  nested_formula = ~ X1 + X2,       # Type 1 AD: reduced working model
+  ad_nested = ad_nested_df,         # Type 1 AD estimates and variances
+  subgroup = subgroup_list,         # Type 2 AD: subgroup definitions
+  ad_subgroup = ad_subgroup_df,     # Type 2 AD estimates and variances
+  partial_terms = c("X2", "X1:X2"), # Type 3 AD: reported subset of coefficients
+  ad_partial = ad_partial_df,       # Type 3 AD estimates and variances
+  drm_formula = ~ X1,               # Density-ratio model covariates
+  burnin = 5000, 
+  mainrun = 10000, 
+  engine = "cpp"                    # "cpp" (fast C++ sampler) or "r" (native R)
 )
-colMeans(fit_lm$posterior_mu)
 
-# Continuous — Application engine (supply your data)
-toy <- example_application_data()
-fit_g <- fit_ipd_gaussian(toy$ipd, burnin = 100, mainrun = 100, verbose = FALSE)
-fit_gad <- fit_ipd_ad_gaussian(
-  ipd = toy$ipd,
-  ad_type1 = toy$ad_type1,
-  ad_type2 = toy$ad_type2,
-  ad_type3 = toy$ad_type3,
-  burnin = 50, mainrun = 50, verbose = FALSE,
-  tau_update_after = 10L
-)
-colMeans(fit_gad$posterior_mu)
+print(fit)
+summary(fit$posterior_mu)
 ```
 
 ---
 
-## Application data shape
+## Key Features
 
-**IPD** — list of studies `list(y, X)` with Application coding
-`(bmi_cat1, bmi_cat2, bmi_cat3, b_wt, bmi_cat1.trt, bmi_cat2.trt, bmi_cat3.trt)`,
-or a data frame via `as_application_ipd()`.
-
-**Type1 AD** — `data.frame(beta_hat, sqrt_hat_V)` bridged to coefficient 7.
-
-**Type2 AD** — proportions `p_01…p_13` plus `beta_hat`, `sqrt_hat_V`.
-
-**Type3 AD** — list with `betahat`/`se` (`J×6`), `use_drm`, `hat_tau`,
-`hat_gamma_tau`, and lists `Design_X`, `nu_X`, `threshold`, `DRM_X`
-(columns `int`, `DRM_X_type3`, `a_n`).
-
----
-
-## Model (brief)
-
-**Logistic (Sim2)** — Bernoulli–logit IPD, hierarchical \(\theta_l \sim N(\mu,\Sigma)\).
-
-**Gaussian formula API (`fit_ipd_ad_lm`)** — same linear random-effects engine,
-but the user specifies `formula` (full IPD model), a nested working formula
-(Type 1), subgroup indicators (Type 2), and which full-model coefficients were
-reported (Type 3), together with the published AD estimates.
-
-**Application continuous** — Gaussian IPD with study-specific \(\sigma_l^2\)
-(truncated-normal prior), Gibbs \(\theta_l\) for IPD, MH bridges for Type1/2/3 AD
-(Type3 uses normal-CDF excess-weight thresholds + optional density ratio).
-
-See [hang-kim-stat/Bayesian-Meta](https://github.com/hang-kim-stat/Bayesian-Meta).
+- **Intuitive R Formula Interface**: Specify the full study regression model and AD reporting structures using standard R formulas.
+- **Covariate Shift Adjustment**: Integrated Density-Ratio Modeling (DRM) matches moments between reference IPD and aggregate studies.
+- **Dual-Engine Architecture**: Native R implementation for transparent verification and C++ (Rcpp / Armadillo) for fast MCMC sampling.
+- **Detailed Validation Reports**: See [`docs/fit_ipd_ad_lm_results.md`](docs/fit_ipd_ad_lm_results.md) for complete mathematical derivation, benchmark comparisons across random seeds, and simulation tutorials with ridge plots.
 
 ---
 

@@ -176,8 +176,8 @@ match_reported <- function(requested, available, label) {
 #'
 #' @return A list with `ipd`, `study`, `formula`, `nested_formula`, `ad_nested`,
 #'   `subgroup`, `ad_subgroup`, `partial_terms`, `ad_partial`, `drm_formula`,
-#'   and MCMC starting values.
-#' @export
+#' @keywords internal
+#' @noRd
 #' @examples
 #' d <- sim1_as_formula_data()
 #' names(d$ad_nested)

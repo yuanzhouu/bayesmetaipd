@@ -62,7 +62,7 @@ fit_ipd_ad_lm(
 | Parameter | Type / Default | Description |
 | :--- | :--- | :--- |
 | `formula` | `formula` **(Required)** | The full regression model formula for IPD (e.g., `Y ~ X1 * X2 + X3`), defining the parameter dimension $p$. |
-| `ipd` | `data.frame` **(Required)** | Long-format data frame containing all individual participant records. |
+| `ipd` | `data.frame` **(Required)** | Pooled participant-level data frame across IPD studies (one row per participant, with a column identifying the study). |
 | `study` | `character` **(Required)** | Name of the column in `ipd` that identifies the study ID. |
 | `nested_formula` | `formula` (`NULL`) | Formula for Type 1 nested working model (e.g., `~ X1 + X2 + X3`). Required if `ad_nested` is supplied. |
 | `ad_nested` | `data.frame` / `list` | Type 1 AD data containing reported coefficients, SE columns (`se_<coef>`) or covariance matrix list `V`, along with `drm_mean` and `drm_var`. |

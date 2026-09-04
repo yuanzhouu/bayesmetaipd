@@ -286,7 +286,8 @@ sim1_as_formula_data <- function() {
 #' the baseline covariate).
 #'
 #' @param formula Full model for IPD, e.g. `y ~ x1 * x2`.
-#' @param ipd IPD data frame.
+#' @param ipd Pooled participant-level data frame (one row per participant, with
+#'   a column identifying the study).
 #' @param study Study id column in `ipd`.
 #' @param nested_formula Type 1 working model, e.g. `~ x1 + x2`. Ignored if
 #'   `ad_nested` is `NULL`.

@@ -82,8 +82,7 @@ fit <- fit_ipd_ad_lm(
   ipd             = d$ipd,                  # Individual participant dataset
   study           = d$study,                # Study identifier column
   nested_formula  = d$nested_formula,       # Type 1 AD: nested working formula (~ X1 + X2)
-  ad_nested       = d$ad_nested,            # Type 1 AD table
-  nested_reported = d$nested_reported,      # Reported nested terms: c("X1", "X2")
+  ad_nested       = d$ad_nested,            # Type 1 AD table (uses default non-intercept terms)
   subgroup        = d$subgroup,             # Type 2 AD: 4 subgroup partition formulas
   ad_subgroup     = d$ad_subgroup,          # Type 2 AD table
   partial_terms   = d$partial_terms,        # Type 3 AD: reported subset c("X2", "X1:X2")

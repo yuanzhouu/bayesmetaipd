@@ -82,3 +82,34 @@
 #' data(sim1_ipdad_rep1)
 #' str(sim1_ipdad_rep1, max.level = 1)
 "sim1_ipdad_rep1"
+
+
+#' Example Formula-Style Dataset from Simulation Study 1
+#'
+#' A bundled dataset extracted directly from the official Simulation Study 1
+#' replicate 1 ([sim1_ipdad_rep1]) via [sim1_as_formula_data()]. Contains
+#' individual participant data (IPD) from 10 studies and aggregate data (AD)
+#' from 30 studies across three reporting paradigms (10 Type 1 nested,
+#' 10 Type 2 subgroup, 10 Type 3 partial), along with subgroup partition
+#' formulas.
+#'
+#' @format A list with components:
+#' \describe{
+#'   \item{ipd}{Data frame of individual participant records (`study`, `Y`, `X1`, `X2`).}
+#'   \item{ad_nested}{Data frame of Type 1 AD studies reporting reduced model coefficients.}
+#'   \item{ad_subgroup}{Data frame of Type 2 AD studies reporting subgroup outcome means.}
+#'   \item{ad_partial}{Data frame of Type 3 AD studies reporting partial full-model terms.}
+#'   \item{subgroup}{Named list of subgroup indicator formulas.}
+#'   \item{formula}{Full model formula (`Y ~ X1 * X2`).}
+#'   \item{nested_formula}{Nested working formula (`~ X1 + X2`).}
+#'   \item{nested_reported}{Names of reported nested coefficients.}
+#'   \item{partial_terms}{Names of reported partial terms.}
+#'   \item{drm_formula}{Density ratio covariate formula (`~ X1`).}
+#' }
+#'
+#' @examples
+#' data(example_data)
+#' head(ipd)
+#' head(ad_nested)
+"example_data"
+

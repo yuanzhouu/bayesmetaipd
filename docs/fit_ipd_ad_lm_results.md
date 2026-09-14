@@ -212,9 +212,8 @@ The C++ backend (`engine = "cpp"`) implements compiled C++ routines using Rcpp a
 
 ---
 
-## 4. 3-Covariate Simulation Tutorial: Workflow, Diagnostics & Ridge Plot
+## 4. 3-Covariate Simulation Tutorial
 
-This section details the simulation validation from [`test_fit_ipd_ad_lm_3vars.R`](file:///C:/Users/Yuan%20Zhou/OneDrive%20-%20University%20of%20Cincinnati/UCsemester/survey_sampling/paper_repo/function_test/test_fit_ipd_ad_lm_3vars.R), demonstrating how to format data, fit the model under different scenarios, and analyze posterior estimates.
 
 ### 4.1 Data Generating Process (DGP) & Multi-Study Structure
 
@@ -238,17 +237,17 @@ This section details the simulation validation from [`test_fit_ipd_ad_lm_3vars.R
 
 ---
 
-### 4.2 Three Experimental Configurations (Full AD vs. Partial AD vs. IPD-Only)
+### 4.2 Three Experimental Configurations (IPD+AD vs. All IPD Known vs. IPD-Only)
 
 | Configuration | Study Pool | Type 1 (Nested) Reported | Type 2 (Subgroup) Reported | Type 3 (Partial) Reported |
 | :--- | :--- | :--- | :--- | :--- |
-| **Test 1 (IPD + Full AD)** | 10 IPD + 24 AD ($L = 34$) | All non-intercepts: `c("X1", "X2", "X3")` | All 4 subgroups: `g1, g2, g3, g4` | 3 terms: `c("X2", "X3", "X1:X2")` |
-| **Test 2 (IPD + Partial AD)** | 10 IPD + 24 Partial AD ($L = 34$) | Partial subset: `c("X2", "X3")` | 2 subgroups only: `g1, g2` | 2 terms only: `c("X2", "X1:X2")` |
+| **Test 1 (IPD + AD)** | 10 IPD + 24 AD ($L = 34$) | All non-intercepts: `c("X1", "X2", "X3")` | All 4 subgroups: `g1, g2, g3, g4` | 3 terms: `c("X2", "X3", "X1:X2")` |
+| **Test 2 (All IPD Known)** | 34 Studies All-IPD ($L = 34$) | N/A (Full IPD Available) | N/A (Full IPD Available) | N/A (Full IPD Available) |
 | **Test 3 (IPD-Only Mode)** | 10 IPD Studies ($L = 10$) | None (`NULL`) | None (`NULL`) | None (`NULL`) |
 
 ---
 
-### 4.3 Complete Executable R Script
+### 4.3 R Script
 
 ```r
 library(bayesmetaipd)
@@ -346,19 +345,13 @@ fit_test1 <- fit_ipd_ad_lm(
   burnin = 5000L, mainrun = 10000L, seed = 1001L, engine = "cpp"
 )
 
-# ---- 3. Test 2: Partial AD + IPD (C++ Engine) ----
+# ---- 3. Test 2: All IPD Known (Gold Standard Benchmark, C++ Engine) ----
+all_ipd_df <- do.call(rbind, study_data_list)
 fit_test2 <- fit_ipd_ad_lm(
   formula = Y ~ X1 * X2 + X3,
-  ipd = ipd_df,
+  ipd = all_ipd_df,
   study = "study",
-  nested_formula = ~ X1 + X2 + X3,
-  nested_reported = c("X2", "X3"), # Partial reporting in nested model
-  ad_nested = ad_nested_all[, c("study", "X2", "X3", "se_X2", "se_X3", "drm_mean", "drm_var")],
-  subgroup = list(g1 = ~ X1 > 0 & X2 == 0, g2 = ~ X1 > 0 & X2 == 1), # Partial subgroups
-  ad_subgroup = ad_subgroup_all[, c("study", "g1", "g2", "se_g1", "se_g2", "drm_mean", "drm_var")],
-  partial_terms = c("X2", "X1:X2"), # Partial full model terms
-  ad_partial = ad_partial_all[, c("study", "X2", "X1:X2", "se_X2", "se_X1:X2", "drm_mean", "drm_var")],
-  drm_formula = ~ X1,
+  ad_nested = NULL, ad_subgroup = NULL, ad_partial = NULL,
   burnin = 5000L, mainrun = 10000L, seed = 1001L, engine = "cpp"
 )
 
@@ -376,47 +369,19 @@ fit_test3 <- fit_ipd_ad_lm(
 
 ### 4.4 Parameter Recovery Diagnostic Table
 
-| Parameter | True $\mu$ | Realized $\bar{\theta}$ (34 Studies) | Test 1 (Full AD) Mean (SD) | Test 1 95% CrI | Test 2 (Partial AD) Mean (SD) | Test 2 95% CrI | Test 3 (IPD-Only) Mean (SD) | Test 3 95% CrI |
+| Parameter | True $\mu$ | Realized $\bar{\theta}$ (34 Studies) | Test 1 (IPD + AD) Mean (SD) | Test 1 95% CrI | Test 2 (All IPD Known) Mean (SD) | Test 2 95% CrI | Test 3 (IPD-Only) Mean (SD) | Test 3 95% CrI |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **(Intercept)** | **1.2000** | 1.2046 | **1.2157** (0.0751) | [1.0697, 1.3643] | **1.1902** (0.0896) | [1.0089, 1.3652] | **1.2081** (0.1938) | [0.8157, 1.5942] |
-| **$X_1$** | **0.6000** | 0.6142 | **0.6006** (0.0596) | [0.4833, 0.7186] | **0.5957** (0.0711) | [0.4527, 0.7375] | **0.6154** (0.1225) | [0.3662, 0.8512] |
-| **$X_2$** | **-1.0000** | -1.0177 | **-0.9955** (0.0534) | [-1.0994, -0.8896] | **-1.0045** (0.0609) | [-1.1246, -0.8871] | **-1.0222** (0.1121) | [-1.2406, -0.7928] |
-| **$X_3$** | **0.4000** | 0.4175 | **0.4129** (0.0410) | [0.3331, 0.4947] | **0.4077** (0.0554) | [0.2952, 0.5154] | **0.4598** (0.1051) | [0.2473, 0.6689] |
-| **$X_1 \times X_2$** | **0.8000** | 0.7692 | **0.7408** (0.0580) | [0.6228, 0.8535] | **0.7463** (0.0671) | [0.6144, 0.8811] | **0.7635** (0.1593) | [0.4448, 1.0745] |
+| **(Intercept)** | **1.2000** | 1.2046 | **1.2157** (0.0751) | [1.0697, 1.3643] | **1.2111** (0.0503) | [1.1127, 1.3108] | **1.2081** (0.1938) | [0.8157, 1.5942] |
+| **$X_1$** | **0.6000** | 0.6142 | **0.6006** (0.0596) | [0.4833, 0.7186] | **0.6034** (0.0482) | [0.5088, 0.6992] | **0.6154** (0.1225) | [0.3662, 0.8512] |
+| **$X_2$** | **-1.0000** | -1.0177 | **-0.9955** (0.0534) | [-1.0994, -0.8896] | **-0.9816** (0.0427) | [-1.0681, -0.9007] | **-1.0222** (0.1121) | [-1.2406, -0.7928] |
+| **$X_3$** | **0.4000** | 0.4175 | **0.4129** (0.0410) | [0.3331, 0.4947] | **0.4044** (0.0371) | [0.3300, 0.4775] | **0.4598** (0.1051) | [0.2473, 0.6689] |
+| **$X_1 \times X_2$** | **0.8000** | 0.7692 | **0.7408** (0.0580) | [0.6228, 0.8535] | **0.7536** (0.0529) | [0.6507, 0.8597] | **0.7635** (0.1593) | [0.4448, 1.0745] |
 
 ---
 
-### 4.5 Ridge Plot Diagnostics and Key Scientific Insights
+### 4.5 Ridge Plot
 
 The posterior density ridge plot below compares the empirical distributions of the five global regression parameters across all three experimental configurations against the ground truth (vertical dashed red lines):
 
 ![Ridge Plot 3-Configuration Comparison](ridge_plot_fit_ipd_ad_lm.png)
 
-*Image file*: [`ridge_plot_fit_ipd_ad_lm.png`](ridge_plot_fit_ipd_ad_lm.png)
-
-#### Key Scientific Insights:
-
-1. **Substantial Efficiency Gains from Integrating AD (Blue/Green vs. Orange)**:
-   - In the **IPD-Only configuration (Orange, Test 3)**, posterior standard deviations are wide due to the limited sample size ($J=10$), e.g., the SD for the interaction term $X_1 \times X_2$ is **0.1593**.
-   - By synthesizing the 24 AD studies (**Blue Test 1 and Green Test 2**), the posterior variance contracts by **over 60%** (with the interaction term SD dropping to **0.0580** in Test 1), significantly enhancing statistical power and estimation precision.
-2. **Unbiased Parameter Recovery**:
-   - All three posterior distributions center tightly on the true data-generating parameters $\mu_{\text{true}}$ (dashed red lines), confirming that the framework achieves unbiased estimation without introducing structural distortion.
-3. **High Robustness to Partial AD Reporting**:
-   - Test 2 (Partial AD, Green) captures virtually all precision gains achieved by Test 1 (Full AD, Blue), demonstrating the high utility of Gaussian marginalization when published literature only reports incomplete summary statistics.
-4. **Execution Speed and Stability**:
-   - The entire simulation pipeline (data generation and 45,000 total MCMC iterations across three tests) executed in **~23 seconds** via the C++ engine. In IPD-Only mode, it cleanly issued the non-blocking warning:
-     ```text
-     Warning message:
-     No AD data provided (`ad_nested`, `ad_subgroup`, and `ad_partial` are all NULL). Running in IPD-only mode.
-     ```
-     with zero numerical interruptions or memory leaks.
-
----
-
-## 5. Summary and Practical Recommendations
-
-| Research Scenario | Recommended Usage |
-| :--- | :--- |
-| **Standard Meta-Analyses & Large Simulations** | Set `engine = "cpp"` to complete 20,000 MCMC iterations in tens of seconds. |
-| **Published Literature with Incomplete Reporting** | Use `subgroup`, `nested_formula`, and `partial_terms` to incorporate whatever summary statistics are available without ad-hoc imputation. |
-| **Baseline Covariate Distribution Shifts** | Maintain the default `use_drm = TRUE` to adjust for cross-study population differences via exponential tilting. |

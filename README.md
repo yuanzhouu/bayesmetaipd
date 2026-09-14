@@ -26,93 +26,75 @@ remotes::install_github("yuanzhouu/bayesmetaipd")
 
 ## Quick Start
 
-The following self-contained example illustrates how to prepare data for each argument and fit the model:
+The package includes the official simulation dataset from the paper (Simulation Study 1 replicate 1), ready to use via `load_example()` or `data("example_data")`.
+
+### 1. Load Simulation Data
 
 ```r
 library(bayesmetaipd)
 
-# -------------------------------------------------------------------------
-# 1. IPD Data: Individual patient data across multiple studies (J = 5)
-# -------------------------------------------------------------------------
-set.seed(42)
-ipd <- data.frame(
-  study = rep(1:5, each = 100),
-  X1    = rnorm(500),
-  X2    = rbinom(500, size = 1, prob = 0.5)
-)
-ipd$Y <- 1.0 + 0.5 * ipd$X1 - 0.8 * ipd$X2 + 0.6 * (ipd$X1 * ipd$X2) + rnorm(500)
+# Load official Simulation Study 1 formula dataset
+d <- load_example()
+```
 
-# -------------------------------------------------------------------------
-# 2. Type 1 AD: Studies reporting reduced model coefficients (omitting X1:X2)
-#    - Columns match terms in nested_formula and their SEs ('se_<term>')
-#    - drm_mean & drm_var: published baseline mean and variance of the DRM covariate
-# -------------------------------------------------------------------------
-ad_nested <- data.frame(
-  study    = 6:10,
-  X1       = rnorm(5, mean =  0.5, sd = 0.05),
-  X2       = rnorm(5, mean = -0.8, sd = 0.05),
-  se_X1    = rep(0.08, 5),
-  se_X2    = rep(0.08, 5),
-  drm_mean = rnorm(5, mean = 0.0, sd = 0.1),
-  drm_var  = rep(1.0 / 100, 5)
-)
+### 2. Inspect Data Structures
 
-# -------------------------------------------------------------------------
-# 3. Type 2 AD: Studies reporting subgroup outcome means and standard errors
-#    - 'subgroup' defines covariate partition formulas
-#    - 'ad_subgroup' columns match group names and standard errors ('se_<group>')
-# -------------------------------------------------------------------------
-subgroup_def <- list(
-  g1 = ~ X1 > 0 & X2 == 0,
-  g2 = ~ X1 <= 0 & X2 == 0
-)
+Print the structure and first few rows of the IPD and the three AD tables (including standard errors `se_*`):
 
-ad_subgroup <- data.frame(
-  study    = 11:15,
-  g1       = rnorm(5, mean = 1.2, sd = 0.1),
-  g2       = rnorm(5, mean = 0.4, sd = 0.1),
-  se_g1    = rep(0.12, 5),
-  se_g2    = rep(0.12, 5),
-  drm_mean = rnorm(5, mean = 0.0, sd = 0.1),
-  drm_var  = rep(1.0 / 100, 5)
-)
+```r
+# --- 1. IPD: Individual participant data (one row per subject) ---
+head(d$ipd, 3)
+#>   study          Y         X1 X2
+#> 1    31 -6.4342892 -0.9431838  0
+#> 2    31 -0.8290351 -0.1559129  0
+#> 3    31 -5.9490264 -1.1335461  0
 
-# -------------------------------------------------------------------------
-# 4. Type 3 AD: Studies fitting full model but reporting only a subset of terms
-#    - 'partial_terms' specifies which terms are published
-#    - 'ad_partial' contains those estimates and their SEs ('se_<term>')
-# -------------------------------------------------------------------------
-ad_partial <- data.frame(
-  study      = 16:20,
-  X2         = rnorm(5, mean = -0.8, sd = 0.06),
-  `X1:X2`    = rnorm(5, mean =  0.6, sd = 0.06),
-  se_X2      = rep(0.09, 5),
-  `se_X1:X2` = rep(0.09, 5),
-  drm_mean   = rnorm(5, mean = 0.0, sd = 0.1),
-  drm_var    = rep(1.0 / 100, 5),
-  check.names = FALSE
-)
+# --- 2. Type 1 AD: Nested working model (estimates, SEs, and DRM summary stats) ---
+head(d$ad_nested, 3)
+#>   study       X1        X2      se_X1     se_X2    drm_mean     drm_var
+#> 1     1 1.989720 -0.129590 0.09809379 0.1430922 -0.04094950 0.002663604
+#> 2     2 1.570416 -2.014011 0.10785919 0.1480977 -0.22959586 0.002367529
+#> 3     3 0.488598  0.919359 0.09977003 0.1362024  0.01449613 0.002335441
 
-# -------------------------------------------------------------------------
-# 5. Fit the Bayesian Hierarchical Random-Effects Model
-# -------------------------------------------------------------------------
+# --- 3. Type 2 AD: Subgroup means (sample means, SEs, and DRM summary stats) ---
+head(d$ad_subgroup, 3)
+#>   study    ind.1    ind.2     ind.3      ind.4  se_ind.1  se_ind.2   drm_mean     drm_var
+#> 1    11 1.244086 3.863963 0.6635194  0.7109921 0.1551659 0.1515569  0.7275264 0.002923500
+#> 2    12 1.798221 2.594988 0.3522915 -0.1966817 0.1526580 0.1574297  0.2764594 0.002345003
+#> 3    13 2.690740 3.975390 1.7192349  2.8468055 0.1491089 0.1439359 -0.1694563 0.002561947
+
+# --- 4. Type 3 AD: Partial full model (subset of terms, SEs, and DRM summary stats) ---
+head(d$ad_partial, 3)
+#>   study        X2       X1:X2     se_X2  se_X1:X2   drm_mean     drm_var
+#> 1    21 0.6994860  0.08862467 0.1514120 0.2066515  0.2079521 0.002469874
+#> 2    22 2.3032548  0.32059343 0.1913503 0.1810330 -0.7834332 0.002529736
+#> 3    23 0.4278566 -2.01219431 0.1872224 0.2184944  0.5393566 0.002233042
+```
+
+### 3. Fit the Model
+
+Call `fit_ipd_ad_lm()` directly on the loaded dataset:
+
+```r
+# Fit the Bayesian hierarchical random-effects model (L = 40 studies: 10 IPD + 30 AD)
 fit <- fit_ipd_ad_lm(
-  formula        = Y ~ X1 * X2,            # Full IPD regression specification
-  ipd            = ipd,                    # Individual participant dataset
-  study          = "study",                # Study identifier column in ipd
-  nested_formula = ~ X1 + X2,              # Type 1 AD: reduced working formula
-  ad_nested      = ad_nested,              # Type 1 AD data frame
-  subgroup       = subgroup_def,           # Type 2 AD: partition formulas
-  ad_subgroup    = ad_subgroup,            # Type 2 AD data frame
-  partial_terms  = c("X2", "X1:X2"),       # Type 3 AD: reported subset of terms
-  ad_partial     = ad_partial,             # Type 3 AD data frame
-  drm_formula    = ~ X1,                   # Density-ratio model covariate
-  burnin         = 1000, 
-  mainrun        = 2000, 
-  engine         = "cpp"                   # "cpp" (fast C++ sampler) or "r" (native R)
+  formula         = d$formula,              # Full model: Y ~ X1 * X2
+  ipd             = d$ipd,                  # Individual participant dataset
+  study           = d$study,                # Study identifier column
+  nested_formula  = d$nested_formula,       # Type 1 AD: nested working formula (~ X1 + X2)
+  ad_nested       = d$ad_nested,            # Type 1 AD table
+  nested_reported = d$nested_reported,      # Reported nested terms: c("X1", "X2")
+  subgroup        = d$subgroup,             # Type 2 AD: 4 subgroup partition formulas
+  ad_subgroup     = d$ad_subgroup,          # Type 2 AD table
+  partial_terms   = d$partial_terms,        # Type 3 AD: reported subset c("X2", "X1:X2")
+  ad_partial      = d$ad_partial,           # Type 3 AD table
+  drm_formula     = d$drm_formula,          # Density-ratio covariate (~ X1)
+  burnin          = 1000, 
+  mainrun         = 2000, 
+  engine          = "cpp"                   # Accelerated C++ MCMC sampler
 )
 
-# Inspect results
+# Inspect posterior summary
 print(fit)
 colMeans(fit$posterior_mu)
 ```

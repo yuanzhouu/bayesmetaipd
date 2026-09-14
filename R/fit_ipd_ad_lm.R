@@ -168,20 +168,22 @@ match_reported <- function(requested, available, label) {
 }
 
 
-#' Convert Simulation 1 replicate 1 into formula-style inputs
+#' Load example formula-style dataset from Simulation Study 1
 #'
-#' Builds an IPD data frame plus Type 1/2/3 AD tables from [sim1_ipdad_rep1],
-#' using the official full model `Y ~ X1 * X2`, nested model `~ X1 + X2`,
+#' Builds an IPD data frame plus Type 1/2/3 AD tables with explicit coefficients,
+#' standard errors (`se_*`), covariance matrices (`V`), and density-ratio
+#' moments (`drm_mean`, `drm_var`) from [sim1_ipdad_rep1].
+#' Uses the official full model `Y ~ X1 * X2`, nested model `~ X1 + X2`,
 #' four `(X1>0) x X2` subgroups, and partial terms `X2` and `X1:X2`.
 #'
 #' @return A list with `ipd`, `study`, `formula`, `nested_formula`, `ad_nested`,
-#'   `subgroup`, `ad_subgroup`, `partial_terms`, `ad_partial`, `drm_formula`,
-#' @keywords internal
-#' @noRd
+#'   `nested_reported`, `subgroup`, `ad_subgroup`, `partial_terms`, `ad_partial`, `drm_formula`.
+#' @export
 #' @examples
-#' d <- sim1_as_formula_data()
-#' names(d$ad_nested)
-sim1_as_formula_data <- function() {
+#' d <- load_example()
+#' head(d$ipd)
+#' head(d$ad_nested)
+load_example <- function() {
   dat <- load_sim1_ipdad_rep1()
   L <- dim(dat$X_cube)[1]
   n <- dim(dat$X_cube)[2]
@@ -206,43 +208,54 @@ sim1_as_formula_data <- function() {
   }
 
   t1 <- which(type_vec == 1L)
-  ad_nested <- data.frame(
-    study = t1,
-    X1 = dat$beta_mat[t1, 2],
-    X2 = dat$beta_mat[t1, 3],
-    drm_mean = vapply(t1, function(s) drm_stats(s)[["mean"]], 1),
-    drm_var = vapply(t1, function(s) drm_stats(s)[["var"]], 1)
-  )
-  ad_nested$V <- lapply(t1, function(s) {
+  V_nested <- lapply(t1, function(s) {
     as.matrix(dat$V_beta_cube[s, 2:3, 2:3])
   })
+  ad_nested <- data.frame(
+    study    = t1,
+    X1       = dat$beta_mat[t1, 2],
+    X2       = dat$beta_mat[t1, 3],
+    se_X1    = vapply(V_nested, function(m) sqrt(m[1, 1]), numeric(1)),
+    se_X2    = vapply(V_nested, function(m) sqrt(m[2, 2]), numeric(1)),
+    drm_mean = vapply(t1, function(s) drm_stats(s)[["mean"]], 1),
+    drm_var  = vapply(t1, function(s) drm_stats(s)[["var"]], 1)
+  )
+  ad_nested$V <- V_nested
 
   t2 <- which(type_vec == 2L)
-  ad_subgroup <- data.frame(
-    study = t2,
-    ind.1 = dat$beta_mat[t2, 1],
-    ind.2 = dat$beta_mat[t2, 2],
-    ind.3 = dat$beta_mat[t2, 3],
-    ind.4 = dat$beta_mat[t2, 4],
-    drm_mean = vapply(t2, function(s) drm_stats(s)[["mean"]], 1),
-    drm_var = vapply(t2, function(s) drm_stats(s)[["var"]], 1)
-  )
-  ad_subgroup$V <- lapply(t2, function(s) {
+  V_subgroup <- lapply(t2, function(s) {
     as.matrix(dat$V_beta_cube[s, , ])
   })
+  ad_subgroup <- data.frame(
+    study    = t2,
+    ind.1    = dat$beta_mat[t2, 1],
+    ind.2    = dat$beta_mat[t2, 2],
+    ind.3    = dat$beta_mat[t2, 3],
+    ind.4    = dat$beta_mat[t2, 4],
+    se_ind.1 = vapply(V_subgroup, function(m) sqrt(m[1, 1]), numeric(1)),
+    se_ind.2 = vapply(V_subgroup, function(m) sqrt(m[2, 2]), numeric(1)),
+    se_ind.3 = vapply(V_subgroup, function(m) sqrt(m[3, 3]), numeric(1)),
+    se_ind.4 = vapply(V_subgroup, function(m) sqrt(m[4, 4]), numeric(1)),
+    drm_mean = vapply(t2, function(s) drm_stats(s)[["mean"]], 1),
+    drm_var  = vapply(t2, function(s) drm_stats(s)[["var"]], 1)
+  )
+  ad_subgroup$V <- V_subgroup
 
   t3 <- which(type_vec == 3L)
-  ad_partial <- data.frame(
-    study = t3,
-    X2 = dat$beta_mat[t3, 3],
-    `X1:X2` = dat$beta_mat[t3, 4],
-    drm_mean = vapply(t3, function(s) drm_stats(s)[["mean"]], 1),
-    drm_var = vapply(t3, function(s) drm_stats(s)[["var"]], 1),
-    check.names = FALSE
-  )
-  ad_partial$V <- lapply(t3, function(s) {
+  V_partial <- lapply(t3, function(s) {
     as.matrix(dat$V_beta_cube[s, 3:4, 3:4])
   })
+  ad_partial <- data.frame(
+    study      = t3,
+    X2         = dat$beta_mat[t3, 3],
+    `X1:X2`    = dat$beta_mat[t3, 4],
+    se_X2      = vapply(V_partial, function(m) sqrt(m[1, 1]), numeric(1)),
+    `se_X1:X2` = vapply(V_partial, function(m) sqrt(m[2, 2]), numeric(1)),
+    drm_mean   = vapply(t3, function(s) drm_stats(s)[["mean"]], 1),
+    drm_var    = vapply(t3, function(s) drm_stats(s)[["var"]], 1),
+    check.names = FALSE
+  )
+  ad_partial$V <- V_partial
 
   list(
     formula = Y ~ X1 * X2,
@@ -270,6 +283,9 @@ sim1_as_formula_data <- function() {
     random_seed = dat$random_seed
   )
 }
+
+#' @export
+sim1_as_formula_data <- load_example
 
 
 #' Fit linear IPD + Type 1/2/3 AD from formulas

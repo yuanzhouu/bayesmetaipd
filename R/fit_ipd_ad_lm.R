@@ -410,8 +410,7 @@ sim1_as_formula_data <- load_example
 #' @param partial_terms Character vector (or integer indices) specifying which
 #'   full-model terms were published by Type 3 AD studies, e.g.,
 #'   `c("X2", "X1:X2")`. Type 3 AD studies fit the complete target model but
-#'   report only a subset of the estimated coefficients (e.g., publishing only
-#'   treatment main effect and interaction while omitting baseline covariates).
+#'   report only a subset of the estimated coefficients.
 #' @param ad_partial Data frame of summary statistics from Type 3 AD studies
 #'   (one row per study). Columns must include: (1) an optional study identifier
 #'   column (e.g., `"study"`); (2) reported coefficient estimates for the terms

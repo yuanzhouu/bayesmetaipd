@@ -473,9 +473,25 @@ sim1_as_formula_data <- load_example
 #'   (Rcpp/RcppArmadillo) inner loop providing significant speedup (same
 #'   mathematical model, but not bit-identical due to floating-point
 #'   differences).
-#'
-#' @return A `bayesmetaipd_fit` with `posterior_mu` (columns = full-model terms),
-#'   `posterior_Sigma_diag`, `posterior_sig2`, `call`, `settings`.
+#' @return An S3 object of class `bayesmetaipd_fit` (inheriting from `list`)
+#'   containing post-burn-in MCMC samples and model metadata:
+#'   \describe{
+#'     \item{`posterior_mu`}{A numeric matrix of dimension `mainrun x p` containing
+#'       posterior draws of the population-level mean coefficients (\eqn{\mu}).
+#'       Column names match the full-model terms.}
+#'     \item{`posterior_Sigma_diag`}{A numeric matrix of dimension `mainrun x p`
+#'       containing posterior draws of the between-study variance components
+#'       (\eqn{\text{diag}(\Sigma)}).}
+#'     \item{`posterior_sig2`}{A numeric vector of length `mainrun` containing
+#'       posterior draws of the residual error variance (\eqn{\sigma^2}).}
+#'     \item{`call`}{The matched function call.}
+#'     \item{`settings`}{A list recording execution configurations and summary
+#'       metadata, including MCMC parameters (`burnin`, `mainrun`, MH step sizes),
+#'       prior hyperparameters (`lambda`, `nu0`, `phi0`), random `seed`, study
+#'       counts (`L`, `J`, `K`, `J_type1`, `J_type2`, `J_type3`), coefficient names,
+#'       and model formulas.}
+#'   }
+#'   Objects of class `bayesmetaipd_fit` have a dedicated `print` method.
 #'
 #' @examples
 #' d <- sim1_as_formula_data()

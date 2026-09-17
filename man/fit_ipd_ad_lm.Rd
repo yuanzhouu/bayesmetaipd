@@ -181,7 +181,26 @@ diagnostic messages to the console.}
 mathematical model, but not bit-identical due to floating-point differences).}
 }
 \value{
-A \code{bayesmetaipd_fit} object.
+An S3 object of class \code{bayesmetaipd_fit} (inheriting from \code{list})
+containing post-burn-in MCMC samples and model metadata:
+\describe{
+  \item{posterior_mu}{A numeric matrix of dimension \code{mainrun x p} containing
+    posterior draws of the population-level mean coefficients (\eqn{\mu}).
+    Column names match the full-model terms.}
+  \item{posterior_Sigma_diag}{A numeric matrix of dimension \code{mainrun x p}
+    containing posterior draws of the between-study variance components
+    (\eqn{\text{diag}(\Sigma)}).}
+  \item{posterior_sig2}{A numeric vector of length \code{mainrun} containing
+    posterior draws of the residual error variance (\eqn{\sigma^2}).}
+  \item{call}{The matched function call.}
+  \item{settings}{A list recording execution configurations and summary
+    metadata, including MCMC parameters (\code{burnin}, \code{mainrun}, MH step
+    sizes), prior hyperparameters (\code{lambda}, \code{nu0}, \code{phi0}),
+    random \code{seed}, study counts (\code{L}, \code{J}, \code{K},
+    \code{J_type1}, \code{J_type2}, \code{J_type3}), coefficient names, and
+    model formulas.}
+}
+Objects of class \code{bayesmetaipd_fit} have a dedicated \code{print} method.
 }
 \examples{
 d <- sim1_as_formula_data()

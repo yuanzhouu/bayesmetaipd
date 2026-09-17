@@ -43,6 +43,12 @@ parse_ad_estimates <- function(ad, reported, label) {
       stop(label, ": list input must contain `beta`.", call. = FALSE)
     }
     beta <- as.matrix(ad$beta)
+    if (!is.null(colnames(beta))) {
+      clean_names <- gsub("^coef_|^mean_", "", colnames(beta))
+      if (all(reported %in% clean_names)) {
+        colnames(beta) <- clean_names
+      }
+    }
     if (is.null(colnames(beta))) {
       if (ncol(beta) != length(reported)) {
         stop(label, ": `beta` needs colnames or ncol = length(reported).", call. = FALSE)
@@ -60,6 +66,12 @@ parse_ad_estimates <- function(ad, reported, label) {
       V <- ad$V
     } else if (!is.null(ad$se)) {
       se <- as.matrix(ad$se)
+      if (!is.null(colnames(se))) {
+        clean_se_names <- gsub("^se_|^coef_|^mean_", "", colnames(se))
+        if (all(reported %in% clean_se_names)) {
+          colnames(se) <- clean_se_names
+        }
+      }
       if (is.null(colnames(se))) colnames(se) <- reported
       se <- se[, reported, drop = FALSE]
       V <- lapply(seq_len(K), function(k) diag(se[k, ]^2, length(reported)))
@@ -75,26 +87,67 @@ parse_ad_estimates <- function(ad, reported, label) {
   }
 
   ad <- as.data.frame(ad)
-  miss <- setdiff(reported, names(ad))
-  if (length(miss)) {
-    stop(label, ": missing coefficient columns ", paste(miss, collapse = ", "), call. = FALSE)
+  nms <- names(ad)
+
+  # Match coefficient / subgroup mean columns:
+  # Accepts: "coef_<term>", "mean_<term>", or "<term>"
+  est_cols <- character(length(reported))
+  for (j in seq_along(reported)) {
+    r <- reported[j]
+    cands <- c(paste0("coef_", r), paste0("mean_", r), r)
+    hit <- cands[cands %in% nms]
+    if (length(hit) > 0L) {
+      est_cols[j] <- hit[1L]
+    } else {
+      est_cols[j] <- NA_character_
+    }
   }
-  beta <- as.matrix(ad[, reported, drop = FALSE])
+
+  if (anyNA(est_cols)) {
+    miss <- reported[is.na(est_cols)]
+    stop(label, ": missing coefficient/mean columns for: ", paste(miss, collapse = ", "),
+         " (expected e.g. `coef_", miss[1L], "`, `mean_", miss[1L], "`, or `", miss[1L], "`).",
+         call. = FALSE)
+  }
+
+  beta <- as.matrix(ad[, est_cols, drop = FALSE])
+  colnames(beta) <- reported
   storage.mode(beta) <- "double"
   K <- nrow(beta)
-  se_cols <- paste0("se_", reported)
+
   if (is.list(ad$V)) {
     if (length(ad$V) != K) stop(label, ": `V` must have one matrix per row.", call. = FALSE)
     V <- ad$V
-  } else if (all(se_cols %in% names(ad))) {
+  } else {
+    # Match standard error columns:
+    # Accepts: "se_<est_col>", "se_<term>", "se_coef_<term>", "se_mean_<term>"
+    se_cols <- character(length(reported))
+    for (j in seq_along(reported)) {
+      r <- reported[j]
+      matched_est <- est_cols[j]
+      se_cands <- unique(c(
+        paste0("se_", matched_est),
+        paste0("se_", r),
+        paste0("se_coef_", r),
+        paste0("se_mean_", r)
+      ))
+      hit_se <- se_cands[se_cands %in% nms]
+      if (length(hit_se) > 0L) {
+        se_cols[j] <- hit_se[1L]
+      } else {
+        se_cols[j] <- NA_character_
+      }
+    }
+    if (anyNA(se_cols)) {
+      miss_se <- reported[is.na(se_cols)]
+      stop(label, ": missing standard error columns for: ", paste(miss_se, collapse = ", "),
+           " (expected e.g. `se_", miss_se[1L], "` or `se_", est_cols[which(reported == miss_se[1L])], "`).",
+           call. = FALSE)
+    }
     se <- as.matrix(ad[, se_cols, drop = FALSE])
     V <- lapply(seq_len(K), function(k) diag(as.numeric(se[k, ])^2, length(reported)))
-  } else {
-    stop(
-      label, ": provide `se_` columns for each reported coefficient, or a list-column `V`.",
-      call. = FALSE
-    )
   }
+
   if (!("drm_mean" %in% names(ad)) || !("drm_var" %in% names(ad))) {
     stop(label, ": need columns `drm_mean` and `drm_var` for the density-ratio covariate.", call. = FALSE)
   }
@@ -330,11 +383,11 @@ sim1_as_formula_data <- load_example
 #'   row per study). Columns must include: (1) an optional study identifier
 #'   column (e.g., `"study"`); (2) columns for reported point estimates of the
 #'   nested model coefficients matching `nested_reported` or terms in
-#'   `nested_formula` (e.g., columns named `"X1"`, `"X2"`); (3) standard
-#'   errors in columns named `se_<term>` (e.g., `"se_X1"`, `"se_X2"`); and
-#'   (4) density-ratio summary columns `drm_mean` and `drm_var` containing the
-#'   sample mean and variance-of-the-mean of the baseline covariate specified
-#'   in `drm_formula`.
+#'   `nested_formula` (e.g., columns named `"coef_X1"`, `"coef_X2"`); (3)
+#'   standard errors in columns named `se_<term>` (e.g., `"se_X1"`, `"se_X2"`
+#'   or `"se_coef_X1"`, `"se_coef_X2"`); and (4) density-ratio summary columns
+#'   `drm_mean` and `drm_var` containing the sample mean and variance-of-the-mean
+#'   of the baseline covariate specified in `drm_formula`.
 #' @param nested_reported Character vector (or integer indices) indicating which
 #'   coefficients from the Type 1 nested working model were published by the AD
 #'   studies. By default, all coefficients in `nested_formula` except the
@@ -349,9 +402,10 @@ sim1_as_formula_data <- load_example
 #' @param ad_subgroup Data frame of summary statistics from Type 2 AD studies
 #'   (one row per study). Columns must include: (1) an optional study identifier
 #'   column (e.g., `"study"`); (2) sample subgroup mean estimates, where column
-#'   names strictly match `names(subgroup)` (e.g., `"g1"`, `"g2"`); (3)
-#'   corresponding standard errors in columns named `se_<subgroup>` (e.g.,
-#'   `"se_g1"`, `"se_g2"`); and (4) density-ratio summary columns `drm_mean` and
+#'   names match `names(subgroup)` (e.g., columns named `"mean_g1"`,
+#'   `"mean_g2"`); (3) corresponding standard errors in columns named
+#'   `se_<subgroup>` (e.g., `"se_g1"`, `"se_g2"` or `"se_mean_g1"`,
+#'   `"se_mean_g2"`); and (4) density-ratio summary columns `drm_mean` and
 #'   `drm_var` for baseline covariate shift adjustment.
 #' @param partial_terms Character vector (or integer indices) specifying which
 #'   full-model terms were published by Type 3 AD studies, e.g.,
@@ -361,10 +415,11 @@ sim1_as_formula_data <- load_example
 #' @param ad_partial Data frame of summary statistics from Type 3 AD studies
 #'   (one row per study). Columns must include: (1) an optional study identifier
 #'   column (e.g., `"study"`); (2) reported coefficient estimates for the terms
-#'   in `partial_terms` (e.g., columns named `"X2"`, `"X1:X2"`); (3)
+#'   in `partial_terms` (e.g., columns named `"coef_X2"`, `"coef_X1:X2"`); (3)
 #'   corresponding standard errors in columns named `se_<term>` (e.g.,
-#'   `"se_X2"`, `"se_X1:X2"`); and (4) density-ratio summary columns
-#'   `drm_mean` and `drm_var` for baseline covariate shift adjustment.
+#'   `"se_X2"`, `"se_X1:X2"` or `"se_coef_X2"`, `"se_coef_X1:X2"`); and (4)
+#'   density-ratio summary columns `drm_mean` and `drm_var` for baseline
+#'   covariate shift adjustment.
 #' @param drm_formula One-sided formula specifying the baseline covariate used
 #'   in the semi-parametric Density-Ratio Model (DRM), e.g., `~ X1`. The DRM uses
 #'   exponential tilting to account for covariate shift (population heterogeneity)

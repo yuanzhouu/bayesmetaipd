@@ -203,7 +203,7 @@ containing post-burn-in MCMC samples and model metadata:
 Objects of class \code{bayesmetaipd_fit} have a dedicated \code{print} method.
 }
 \examples{
-d <- sim1_as_formula_data()
+d <- load_example()
 fit <- fit_ipd_ad_lm(
   formula = d$formula,
   ipd = d$ipd,

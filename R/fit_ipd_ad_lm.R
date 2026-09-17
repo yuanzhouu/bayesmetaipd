@@ -494,7 +494,7 @@ sim1_as_formula_data <- load_example
 #'   Objects of class `bayesmetaipd_fit` have a dedicated `print` method.
 #'
 #' @examples
-#' d <- sim1_as_formula_data()
+#' d <- load_example()
 #' fit <- fit_ipd_ad_lm(
 #'   formula = d$formula,
 #'   ipd = d$ipd,

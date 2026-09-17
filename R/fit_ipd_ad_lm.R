@@ -327,15 +327,14 @@ sim1_as_formula_data <- load_example
 #'   the response variable `Y` on the left-hand side of the tilde (`~`) is
 #'   omitted. Ignored if `ad_nested` is `NULL`.
 #' @param ad_nested Data frame of summary statistics from Type 1 AD studies (one
-#'   row per study). Columns must include: (1) an optional study identifier column;
-#'   (2) columns for reported point estimates of the nested model coefficients
-#'   matching `nested_reported` or terms in `nested_formula`; (3) standard
-#'   errors in columns named `se_<term>` (e.g., `se_X1`, `se_X2`) or a
-#'   list-column `V` containing covariance matrices; and (4) density-ratio
-#'   summary columns `drm_mean` and `drm_var` containing the sample mean and
-#'   variance-of-the-mean of the baseline covariate specified in `drm_formula`.
-#'   Alternatively, a list containing `beta`, `V` (or `se`), `drm_mean`, and
-#'   `drm_var`.
+#'   row per study). Columns must include: (1) an optional study identifier
+#'   column (e.g., `"study"`); (2) columns for reported point estimates of the
+#'   nested model coefficients matching `nested_reported` or terms in
+#'   `nested_formula` (e.g., columns named `"X1"`, `"X2"`); (3) standard
+#'   errors in columns named `se_<term>` (e.g., `"se_X1"`, `"se_X2"`); and
+#'   (4) density-ratio summary columns `drm_mean` and `drm_var` containing the
+#'   sample mean and variance-of-the-mean of the baseline covariate specified
+#'   in `drm_formula`.
 #' @param nested_reported Character vector (or integer indices) indicating which
 #'   coefficients from the Type 1 nested working model were published by the AD
 #'   studies. By default, all coefficients in `nested_formula` except the
@@ -349,11 +348,11 @@ sim1_as_formula_data <- load_example
 #'   covariate space.
 #' @param ad_subgroup Data frame of summary statistics from Type 2 AD studies
 #'   (one row per study). Columns must include: (1) an optional study identifier
-#'   column; (2) sample subgroup mean estimates, where column names strictly
-#'   match `names(subgroup)`; (3) corresponding standard errors in columns
-#'   named `se_<subgroup>` (e.g., `se_g1`, `se_g2`); and (4) density-ratio
-#'   summary columns `drm_mean` and `drm_var` for baseline covariate shift
-#'   adjustment.
+#'   column (e.g., `"study"`); (2) sample subgroup mean estimates, where column
+#'   names strictly match `names(subgroup)` (e.g., `"g1"`, `"g2"`); (3)
+#'   corresponding standard errors in columns named `se_<subgroup>` (e.g.,
+#'   `"se_g1"`, `"se_g2"`); and (4) density-ratio summary columns `drm_mean` and
+#'   `drm_var` for baseline covariate shift adjustment.
 #' @param partial_terms Character vector (or integer indices) specifying which
 #'   full-model terms were published by Type 3 AD studies, e.g.,
 #'   `c("X2", "X1:X2")`. Type 3 AD studies fit the complete target model but
@@ -361,10 +360,11 @@ sim1_as_formula_data <- load_example
 #'   treatment main effect and interaction while omitting baseline covariates).
 #' @param ad_partial Data frame of summary statistics from Type 3 AD studies
 #'   (one row per study). Columns must include: (1) an optional study identifier
-#'   column; (2) reported coefficient estimates for the terms in `partial_terms`;
-#'   (3) corresponding standard errors in columns named `se_<term>` or a
-#'   list-column `V` of covariance matrices; and (4) density-ratio summary
-#'   columns `drm_mean` and `drm_var` for baseline covariate shift adjustment.
+#'   column (e.g., `"study"`); (2) reported coefficient estimates for the terms
+#'   in `partial_terms` (e.g., columns named `"X2"`, `"X1:X2"`); (3)
+#'   corresponding standard errors in columns named `se_<term>` (e.g.,
+#'   `"se_X2"`, `"se_X1:X2"`); and (4) density-ratio summary columns
+#'   `drm_mean` and `drm_var` for baseline covariate shift adjustment.
 #' @param drm_formula One-sided formula specifying the baseline covariate used
 #'   in the semi-parametric Density-Ratio Model (DRM), e.g., `~ X1`. The DRM uses
 #'   exponential tilting to account for covariate shift (population heterogeneity)

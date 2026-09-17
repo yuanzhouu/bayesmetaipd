@@ -68,15 +68,14 @@ simplicity, the response variable \code{Y} on the left-hand side of the tilde
 (\code{~}) is omitted. Ignored if \code{ad_nested} is \code{NULL}.}
 
 \item{ad_nested}{Data frame of summary statistics from Type 1 AD studies (one
-row per study). Columns must include: (1) an optional study identifier column;
-(2) columns for reported point estimates of the nested model coefficients
-matching \code{nested_reported} or terms in \code{nested_formula}; (3) standard
-errors in columns named \code{se_<term>} (e.g., \code{se_X1}, \code{se_X2}) or
-a list-column \code{V} containing covariance matrices; and (4) density-ratio
-summary columns \code{drm_mean} and \code{drm_var} containing the sample mean
-and variance-of-the-mean of the baseline covariate specified in
-\code{drm_formula}. Alternatively, a list containing \code{beta}, \code{V} (or
-\code{se}), \code{drm_mean}, and \code{drm_var}.}
+row per study). Columns must include: (1) an optional study identifier column
+(e.g., \code{"study"}); (2) columns for reported point estimates of the nested
+model coefficients matching \code{nested_reported} or terms in
+\code{nested_formula} (e.g., columns named \code{"X1"}, \code{"X2"}); (3)
+standard errors in columns named \code{se_<term>} (e.g., \code{"se_X1"},
+\code{"se_X2"}); and (4) density-ratio summary columns \code{drm_mean} and
+\code{drm_var} containing the sample mean and variance-of-the-mean of the
+baseline covariate specified in \code{drm_formula}.}
 
 \item{nested_reported}{Character vector (or integer indices) indicating which
 coefficients from the Type 1 nested working model were published by the AD
@@ -92,12 +91,12 @@ Each formula evaluates to a binary indicator on the participant-level
 covariate space.}
 
 \item{ad_subgroup}{Data frame of summary statistics from Type 2 AD studies (one
-row per study). Columns must include: (1) an optional study identifier column;
-(2) sample subgroup mean estimates, where column names strictly match
-\code{names(subgroup)}; (3) corresponding standard errors in columns named
-\code{se_<subgroup>} (e.g., \code{se_g1}, \code{se_g2}); and (4) density-ratio
-summary columns \code{drm_mean} and \code{drm_var} for baseline covariate shift
-adjustment.}
+row per study). Columns must include: (1) an optional study identifier column
+(e.g., \code{"study"}); (2) sample subgroup mean estimates, where column names
+strictly match \code{names(subgroup)} (e.g., \code{"g1"}, \code{"g2"}); (3)
+corresponding standard errors in columns named \code{se_<subgroup>} (e.g.,
+\code{"se_g1"}, \code{"se_g2"}); and (4) density-ratio summary columns
+\code{drm_mean} and \code{drm_var} for baseline covariate shift adjustment.}
 
 \item{partial_terms}{Character vector (or integer indices) specifying which
 full-model terms were published by Type 3 AD studies, e.g.,
@@ -106,12 +105,12 @@ report only a subset of the estimated coefficients (e.g., publishing only
 treatment main effect and interaction while omitting baseline covariates).}
 
 \item{ad_partial}{Data frame of summary statistics from Type 3 AD studies (one
-row per study). Columns must include: (1) an optional study identifier column;
-(2) reported coefficient estimates for the terms in \code{partial_terms}; (3)
-corresponding standard errors in columns named \code{se_<term>} or a
-list-column \code{V} of covariance matrices; and (4) density-ratio summary
-columns \code{drm_mean} and \code{drm_var} for baseline covariate shift
-adjustment.}
+row per study). Columns must include: (1) an optional study identifier column
+(e.g., \code{"study"}); (2) reported coefficient estimates for the terms in
+\code{partial_terms} (e.g., columns named \code{"X2"}, \code{"X1:X2"}); (3)
+corresponding standard errors in columns named \code{se_<term>} (e.g.,
+\code{"se_X2"}, \code{"se_X1:X2"}); and (4) density-ratio summary columns
+\code{drm_mean} and \code{drm_var} for baseline covariate shift adjustment.}
 
 \item{drm_formula}{One-sided formula specifying the baseline covariate used in
 the semi-parametric Density-Ratio Model (DRM), e.g., \code{~ X1}. The DRM uses

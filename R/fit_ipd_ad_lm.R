@@ -288,10 +288,13 @@ load_example <- function() {
 sim1_as_formula_data <- load_example
 
 
-#' Fit linear IPD + Type 1/2/3 AD from formulas
+#' Fit gaussian linear model to IPD + Type 1/2/3 AD data
 #'
-#' General continuous-outcome version of Simulation Study 1 IPD+AD. The user
-#' supplies:
+#' Fit gaussian linear model to IPD + Type 1/2/3 AD data within a Bayesian
+#' random-effects framework via estimating equations, multiplier bootstrap,
+#' and density ratio models.
+#'
+#' The user supplies:
 #' * a **full IPD formula**
 #' * a **nested working formula** (Type 1) and its reported coefficients
 #' * **subgroup definitions** (Type 2) and subgroup means
@@ -301,39 +304,115 @@ sim1_as_formula_data <- load_example
 #' for the covariate in `drm_formula` (paper: mean and variance-of-the-mean of
 #' the baseline covariate).
 #'
-#' @param formula Full model for IPD, e.g. `y ~ x1 * x2`.
-#' @param ipd Pooled participant-level data frame (one row per participant, with
-#'   a column identifying the study).
-#' @param study Study id column in `ipd`.
-#' @param nested_formula Type 1 working model, e.g. `~ x1 + x2`. Ignored if
-#'   `ad_nested` is `NULL`.
-#' @param ad_nested Type 1 AD: data frame with reported nested coefficients,
-#'   either `se_<coef>` columns or a list-column `V`, plus `drm_mean`,
-#'   `drm_var`. Or a list with `beta`, `V`/`se`, `drm_mean`, `drm_var`.
-#' @param nested_reported Names (or indices) of nested coefficients that were
-#'   published. Default: all except the intercept.
-#' @param subgroup Named list of Type 2 subgroup formulas, e.g.
-#'   `list(g1 = ~ x1 > 0 & x2 == 0, ...)`.
-#' @param ad_subgroup Type 2 AD table; coefficient columns must match
-#'   `names(subgroup)`.
-#' @param partial_terms Character vector (or indices) of full-model terms
-#'   reported by Type 3 studies, e.g. `c("x2", "x1:x2")`.
-#' @param ad_partial Type 3 AD table for those terms.
-#' @param drm_formula One-sided formula for the density-ratio covariate,
-#'   default `~` the first non-intercept full-model term. Paper uses `~ x1`.
-#' @param use_drm If `FALSE`, fix the density ratio at 1 (no `alpha`/`tau` MH).
-#' @param diagonal_V If `TRUE` (default, official), replace each AD covariance
-#'   with its diagonal.
-#' @param burnin,mainrun MCMC lengths.
-#' @param step_theta,step_alpha,step_tau MH scales (official Sim1: 0.2, 0.01, 0.02).
-#' @param lambda,nu0,phi0 Prior hyperparameters.
+#' @param formula Two-sided formula specifying the full target model for
+#'   Individual Participant Data (IPD), e.g., `Y ~ X1 + X2 + X1:X2` (or
+#'   `Y ~ X1 * X2`). This model represents the primary inferential target of
+#'   interest across all studies, where `Y` is the continuous response and
+#'   uppercase terms (such as `X1`, `X2`, and their interactions) constitute
+#'   the target design matrix.
+#' @param ipd Data frame of Individual Patient Data (Individual Participant Data),
+#'   containing individual-level records from all available IPD studies. It must
+#'   contain the continuous response variable (`Y`), all predictors/covariates
+#'   specified in `formula` (e.g., `X1`, `X2`), and a study identifier column
+#'   identifying which study each participant belongs to.
+#' @param study Character string specifying the name of the study identifier
+#'   column in the `ipd` data frame (e.g., `"study"`).
+#' @param nested_formula One-sided formula defining the Type 1 working model
+#'   (nested/reduced model), e.g., `~ X1 + X2`. Type 1 Aggregate Data (AD)
+#'   studies fit a reduced working model that omits certain terms from the full
+#'   target model (e.g., omitting the interaction term `X1:X2`). The left-hand
+#'   side of the tilde (`~`) is omitted because individual outcome observations
+#'   are not directly available in AD studies; only the reported working
+#'   covariates need to be specified. Ignored if `ad_nested` is `NULL`.
+#' @param ad_nested Data frame of summary statistics from Type 1 AD studies (one
+#'   row per study). Columns must include: (1) an optional study identifier column;
+#'   (2) columns for reported point estimates of the nested model coefficients
+#'   matching `nested_reported` or terms in `nested_formula`; (3) standard
+#'   errors in columns named `se_<term>` (e.g., `se_X1`, `se_X2`) or a
+#'   list-column `V` containing covariance matrices; and (4) density-ratio
+#'   summary columns `drm_mean` and `drm_var` containing the sample mean and
+#'   variance-of-the-mean of the baseline covariate specified in `drm_formula`.
+#'   Alternatively, a list containing `beta`, `V` (or `se`), `drm_mean`, and
+#'   `drm_var`.
+#' @param nested_reported Character vector (or integer indices) indicating which
+#'   coefficients from the Type 1 nested working model were published by the AD
+#'   studies. By default, all coefficients in `nested_formula` except the
+#'   intercept are assumed to be reported.
+#' @param subgroup Named list of one-sided formulas defining the subgroup
+#'   indicators for Type 2 AD studies. Type 2 AD studies report sample subgroup
+#'   outcome means and standard errors across partitions of the covariate space
+#'   rather than regression coefficients. For example:
+#'   `list(g1 = ~ X1 > 0 & X2 == 0, g2 = ~ X1 <= 0 & X2 == 0, g3 = ~ X1 > 0 & X2 == 1, g4 = ~ X1 <= 0 & X2 == 1)`.
+#'   Each formula evaluates to a binary indicator on the participant-level
+#'   covariate space.
+#' @param ad_subgroup Data frame of summary statistics from Type 2 AD studies
+#'   (one row per study). Columns must include: (1) an optional study identifier
+#'   column; (2) sample subgroup mean estimates, where column names strictly
+#'   match `names(subgroup)`; (3) corresponding standard errors in columns
+#'   named `se_<subgroup>` (e.g., `se_g1`, `se_g2`); and (4) density-ratio
+#'   summary columns `drm_mean` and `drm_var` for baseline covariate shift
+#'   adjustment.
+#' @param partial_terms Character vector (or integer indices) specifying which
+#'   full-model terms were published by Type 3 AD studies, e.g.,
+#'   `c("X2", "X1:X2")`. Type 3 AD studies fit the complete target model but
+#'   report only a subset of the estimated coefficients (e.g., publishing only
+#'   treatment main effect and interaction while omitting baseline covariates).
+#' @param ad_partial Data frame of summary statistics from Type 3 AD studies
+#'   (one row per study). Columns must include: (1) an optional study identifier
+#'   column; (2) reported coefficient estimates for the terms in `partial_terms`;
+#'   (3) corresponding standard errors in columns named `se_<term>` or a
+#'   list-column `V` of covariance matrices; and (4) density-ratio summary
+#'   columns `drm_mean` and `drm_var` for baseline covariate shift adjustment.
+#' @param drm_formula One-sided formula specifying the baseline covariate used
+#'   in the semi-parametric Density-Ratio Model (DRM), e.g., `~ X1`. The DRM uses
+#'   exponential tilting to account for covariate shift (population heterogeneity)
+#'   between AD and IPD study populations based on published aggregate moments
+#'   (`drm_mean` and `drm_var`). If `NULL`, defaults to the first non-intercept
+#'   covariate in the full target model.
+#' @param use_drm Logical; if `TRUE` (default), applies semi-parametric
+#'   density-ratio modeling to adjust for covariate shift between IPD and AD
+#'   populations. If `FALSE`, assumes homogeneous covariate distributions
+#'   across studies, fixing density-ratio weights to 1 and skipping
+#'   Metropolis-Hastings updates for DRM tilt parameters.
+#' @param diagonal_V Logical; if `TRUE` (default), keeps only the diagonal
+#'   variances of each AD covariance matrix (assuming zero off-diagonal
+#'   sampling covariances), which is standard practice when study-specific
+#'   coefficient covariances are omitted in published literature.
+#' @param burnin,mainrun Positive integers specifying MCMC sampling lengths:
+#'   `burnin` is the number of initial warm-up/burn-in iterations to discard,
+#'   and `mainrun` is the number of post-burn-in iterations retained for
+#'   posterior inference.
+#' @param step_theta,step_alpha,step_tau Numeric proposal standard deviations
+#'   for random-walk Metropolis-Hastings steps: `step_theta` for study-specific
+#'   effect vectors (\eqn{\theta_l}), `step_alpha` for DRM tilt parameters
+#'   (\eqn{\alpha_l}), and `step_tau` for baseline covariate moments
+#'   (\eqn{\tau_l}).
+#' @param lambda,nu0,phi0 Prior hyperparameters for the Bayesian hierarchical
+#'   model: `lambda` is the variance multiplier for the population mean prior
+#'   \eqn{\mu \sim \mathcal{N}(0, \lambda I)}; `nu0` and `phi0` are the
+#'   degrees of freedom and scale multiplier for the Inverse-Wishart hyperprior
+#'   on between-study covariance \eqn{\Sigma \sim \text{Inv-Wishart}(\nu_0, \phi_0 I)}.
 #' @param theta_init_ipd,theta_init_nested,theta_init_subgroup,theta_init_partial
-#'   Optional starting `theta` matrices.
-#' @param mu_init,Sigma_init,sig2_init Starting values.
-#' @param seed RNG seed. `NULL` leaves RNG unchanged.
-#' @param verbose Progress printing.
-#' @param engine `"r"` (default) R sampler; `"cpp"` Rcpp inner loop (same model,
-#'   not bit-identical).
+#'   Optional numeric matrices of starting values for study-specific parameters
+#'   (\eqn{\theta_l}) across IPD studies, Type 1 nested AD studies, Type 2
+#'   subgroup AD studies, and Type 3 partial AD studies, respectively. Each
+#'   matrix must have rows equal to the number of studies in that category and
+#'   columns equal to the number of full-model terms.
+#' @param mu_init,Sigma_init,sig2_init Optional starting values for the Markov
+#'   chain: `mu_init` is a numeric vector for the population mean effect
+#'   \eqn{\mu}; `Sigma_init` is a positive-definite matrix for between-study
+#'   covariance \eqn{\Sigma}; and `sig2_init` is a positive scalar for
+#'   residual error variance \eqn{\sigma^2}.
+#' @param seed An integer random seed passed to `set.seed()` for exact
+#'   reproducibility of MCMC chains. If `NULL`, the current RNG state is left
+#'   unchanged.
+#' @param verbose Logical; if `TRUE`, displays MCMC iteration progress and
+#'   diagnostic messages to the console.
+#' @param engine Character string specifying the computation engine: `"r"`
+#'   (default) uses the pure R MCMC sampler; `"cpp"` uses an optimized C++
+#'   (Rcpp/RcppArmadillo) inner loop providing significant speedup (same
+#'   mathematical model, but not bit-identical due to floating-point
+#'   differences).
 #'
 #' @return A `bayesmetaipd_fit` with `posterior_mu` (columns = full-model terms),
 #'   `posterior_Sigma_diag`, `posterior_sig2`, `call`, `settings`.

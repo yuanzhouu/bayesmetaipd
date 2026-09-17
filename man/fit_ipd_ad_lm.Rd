@@ -1,9 +1,10 @@
 \name{fit_ipd_ad_lm}
 \alias{fit_ipd_ad_lm}
-\title{Fit linear IPD + Type 1/2/3 AD from formulas}
+\title{Fit gaussian linear model to IPD + Type 1/2/3 AD data}
 \description{
-General continuous-outcome IPD+AD sampler. Supply a full IPD formula, then
-describe the three AD report types and provide their published estimates.
+Fit gaussian linear model to IPD + Type 1/2/3 AD data within a Bayesian
+random-effects framework via estimating equations, multiplier bootstrap,
+and density ratio models.
 }
 \usage{
 fit_ipd_ad_lm(
@@ -41,50 +42,136 @@ fit_ipd_ad_lm(
 )
 }
 \arguments{
-\item{formula}{Full IPD model, e.g. \code{y ~ x1 * x2}.}
+\item{formula}{Two-sided formula specifying the full target model for Individual
+Participant Data (IPD), e.g., \code{Y ~ X1 + X2 + X1:X2} (or equivalently
+\code{Y ~ X1 * X2}). This model represents the primary inferential target of
+interest across all studies, where \code{Y} is the continuous response and
+uppercase terms (such as \code{X1}, \code{X2}, and their interactions)
+constitute the target design matrix.}
 
-\item{ipd}{IPD data frame.}
+\item{ipd}{Data frame of Individual Patient Data (Individual Participant Data),
+containing individual-level records from all available IPD studies. It must
+contain the continuous response variable (\code{Y}), all predictors/covariates
+specified in \code{formula} (e.g., \code{X1}, \code{X2}), and a study
+identifier column identifying which study each participant belongs to.}
 
-\item{study}{Study id column in \code{ipd}.}
+\item{study}{Character string specifying the name of the study identifier column
+in the \code{ipd} data frame (e.g., \code{"study"}).}
 
-\item{nested_formula}{Type 1 working model, e.g. \code{~ x1 + x2}.}
+\item{nested_formula}{One-sided formula defining the Type 1 working model
+(nested/reduced model), e.g., \code{~ X1 + X2}. Type 1 Aggregate Data (AD)
+studies fit a reduced working model that omits certain terms from the full
+target model (e.g., omitting the interaction term \code{X1:X2}). The
+left-hand side of the tilde (\code{~}) is omitted because individual outcome
+observations are not directly available in AD studies; only the reported
+working covariates need to be specified. Ignored if \code{ad_nested} is
+\code{NULL}.}
 
-\item{ad_nested}{Type 1 AD table: reported nested coefficients, \code{se_*} or
-list-column \code{V}, plus \code{drm_mean}, \code{drm_var}.}
+\item{ad_nested}{Data frame of summary statistics from Type 1 AD studies (one
+row per study). Columns must include: (1) an optional study identifier column;
+(2) columns for reported point estimates of the nested model coefficients
+matching \code{nested_reported} or terms in \code{nested_formula}; (3) standard
+errors in columns named \code{se_<term>} (e.g., \code{se_X1}, \code{se_X2}) or
+a list-column \code{V} containing covariance matrices; and (4) density-ratio
+summary columns \code{drm_mean} and \code{drm_var} containing the sample mean
+and variance-of-the-mean of the baseline covariate specified in
+\code{drm_formula}. Alternatively, a list containing \code{beta}, \code{V} (or
+\code{se}), \code{drm_mean}, and \code{drm_var}.}
 
-\item{nested_reported}{Names/indices of nested coefficients that were published.
-Default: all except intercept.}
+\item{nested_reported}{Character vector (or integer indices) indicating which
+coefficients from the Type 1 nested working model were published by the AD
+studies. By default, all coefficients in \code{nested_formula} except the
+intercept are assumed to be reported.}
 
-\item{subgroup}{Named list of Type 2 subgroup formulas.}
+\item{subgroup}{Named list of one-sided formulas defining the subgroup
+indicators for Type 2 AD studies. Type 2 AD studies report sample subgroup
+outcome means and standard errors across partitions of the covariate space
+rather than regression coefficients. For example:
+\code{list(g1 = ~ X1 > 0 & X2 == 0, g2 = ~ X1 <= 0 & X2 == 0, g3 = ~ X1 > 0 & X2 == 1, g4 = ~ X1 <= 0 & X2 == 1)}.
+Each formula evaluates to a binary indicator on the participant-level
+covariate space.}
 
-\item{ad_subgroup}{Type 2 AD table; columns match \code{names(subgroup)}.}
+\item{ad_subgroup}{Data frame of summary statistics from Type 2 AD studies (one
+row per study). Columns must include: (1) an optional study identifier column;
+(2) sample subgroup mean estimates, where column names strictly match
+\code{names(subgroup)}; (3) corresponding standard errors in columns named
+\code{se_<subgroup>} (e.g., \code{se_g1}, \code{se_g2}); and (4) density-ratio
+summary columns \code{drm_mean} and \code{drm_var} for baseline covariate shift
+adjustment.}
 
-\item{partial_terms}{Full-model terms reported by Type 3 studies.}
+\item{partial_terms}{Character vector (or integer indices) specifying which
+full-model terms were published by Type 3 AD studies, e.g.,
+\code{c("X2", "X1:X2")}. Type 3 AD studies fit the complete target model but
+report only a subset of the estimated coefficients (e.g., publishing only
+treatment main effect and interaction while omitting baseline covariates).}
 
-\item{ad_partial}{Type 3 AD table for those terms.}
+\item{ad_partial}{Data frame of summary statistics from Type 3 AD studies (one
+row per study). Columns must include: (1) an optional study identifier column;
+(2) reported coefficient estimates for the terms in \code{partial_terms}; (3)
+corresponding standard errors in columns named \code{se_<term>} or a
+list-column \code{V} of covariance matrices; and (4) density-ratio summary
+columns \code{drm_mean} and \code{drm_var} for baseline covariate shift
+adjustment.}
 
-\item{drm_formula}{Density-ratio formula (default first covariate).}
+\item{drm_formula}{One-sided formula specifying the baseline covariate used in
+the semi-parametric Density-Ratio Model (DRM), e.g., \code{~ X1}. The DRM uses
+exponential tilting to account for covariate shift (population heterogeneity)
+between AD and IPD study populations based on published aggregate moments
+(\code{drm_mean} and \code{drm_var}). If \code{NULL}, defaults to the first
+non-intercept covariate in the full target model.}
 
-\item{use_drm}{If \code{FALSE}, skip density-ratio MH updates.}
+\item{use_drm}{Logical; if \code{TRUE} (default), applies semi-parametric
+density-ratio modeling to adjust for covariate shift between IPD and AD
+populations. If \code{FALSE}, assumes homogeneous covariate distributions
+across studies, fixing density-ratio weights to 1 and skipping
+Metropolis-Hastings updates for DRM tilt parameters.}
 
-\item{diagonal_V}{If \code{TRUE}, keep only the diagonal of each AD covariance.}
+\item{diagonal_V}{Logical; if \code{TRUE} (default), keeps only the diagonal
+variances of each AD covariance matrix (assuming zero off-diagonal sampling
+covariances), which is standard practice when study-specific coefficient
+covariances are omitted in published literature.}
 
-\item{burnin, mainrun}{MCMC lengths.}
+\item{burnin, mainrun}{Positive integers specifying MCMC sampling lengths:
+\code{burnin} is the number of initial warm-up/burn-in iterations to discard,
+and \code{mainrun} is the number of post-burn-in iterations retained for
+posterior inference.}
 
-\item{step_theta, step_alpha, step_tau}{MH scales.}
+\item{step_theta, step_alpha, step_tau}{Numeric proposal standard deviations for
+random-walk Metropolis-Hastings steps: \code{step_theta} for study-specific
+effect vectors (\eqn{\theta_l}), \code{step_alpha} for DRM tilt parameters
+(\eqn{\alpha_l}), and \code{step_tau} for baseline covariate moments
+(\eqn{\tau_l}).}
 
-\item{lambda, nu0, phi0}{Prior hyperparameters.}
+\item{lambda, nu0, phi0}{Prior hyperparameters for the Bayesian hierarchical
+model: \code{lambda} is the variance multiplier for the population mean prior
+\eqn{\mu \sim \mathcal{N}(0, \lambda I)}; \code{nu0} and \code{phi0} are the
+degrees of freedom and scale multiplier for the Inverse-Wishart hyperprior on
+between-study covariance \eqn{\Sigma \sim \text{Inv-Wishart}(\nu_0, \phi_0 I)}.}
 
-\item{theta_init_ipd, theta_init_nested, theta_init_subgroup, theta_init_partial}{Optional starting \code{theta} matrices.}
+\item{theta_init_ipd, theta_init_nested, theta_init_subgroup, theta_init_partial}{Optional
+numeric matrices of starting values for study-specific parameters
+(\eqn{\theta_l}) across IPD studies, Type 1 nested AD studies, Type 2 subgroup
+AD studies, and Type 3 partial AD studies, respectively. Each matrix must have
+rows equal to the number of studies in that category and columns equal to the
+number of full-model terms.}
 
-\item{mu_init, Sigma_init, sig2_init}{Starting values.}
+\item{mu_init, Sigma_init, sig2_init}{Optional starting values for the Markov
+chain: \code{mu_init} is a numeric vector for the population mean effect
+\eqn{\mu}; \code{Sigma_init} is a positive-definite matrix for between-study
+covariance \eqn{\Sigma}; and \code{sig2_init} is a positive scalar for residual
+error variance \eqn{\sigma^2}.}
 
-\item{seed}{RNG seed.}
+\item{seed}{An integer random seed passed to \code{set.seed()} for exact
+reproducibility of MCMC chains. If \code{NULL}, the current RNG state is left
+unchanged.}
 
-\item{verbose}{Print progress.}
+\item{verbose}{Logical; if \code{TRUE}, displays MCMC iteration progress and
+diagnostic messages to the console.}
 
-\item{engine}{\code{"r"} (default) R sampler; \code{"cpp"} faster Rcpp loop
-(same model, not bit-identical).}
+\item{engine}{Character string specifying the computation engine: \code{"r"}
+(default) uses the pure R MCMC sampler; \code{"cpp"} uses an optimized C++
+(Rcpp/RcppArmadillo) inner loop providing significant speedup (same
+mathematical model, but not bit-identical due to floating-point differences).}
 }
 \value{
 A \code{bayesmetaipd_fit} object.

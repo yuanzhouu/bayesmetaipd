@@ -134,34 +134,39 @@ variances of each AD covariance matrix (assuming zero off-diagonal sampling
 covariances).}
 
 \item{burnin, mainrun}{Positive integers specifying MCMC sampling lengths:
-\code{burnin} is the number of initial warm-up/burn-in iterations to discard,
-and \code{mainrun} is the number of post-burn-in iterations retained for
-posterior inference.}
+\code{burnin} is the number of initial warm-up/burn-in iterations to discard
+(default: \code{10000}), and \code{mainrun} is the number of post-burn-in
+iterations retained for posterior inference (default: \code{10000}).}
 
 \item{step_theta, step_alpha, step_tau}{Numeric proposal standard deviations for
 random-walk Metropolis-Hastings steps: \code{step_theta} for study-specific
-effect vectors (\eqn{\theta_l}), \code{step_alpha} for DRM tilt parameters
-(\eqn{\alpha_l}), and \code{step_tau} for baseline covariate moments
-(\eqn{\tau_l}).}
+effect vectors (\eqn{\theta_l}, default: \code{0.2}); \code{step_alpha} for DRM
+tilt parameters (\eqn{\alpha_l}, default: \code{0.01}); and \code{step_tau} for
+baseline covariate moments (\eqn{\tau_l}, default: \code{0.02}).}
 
 \item{lambda, nu0, phi0}{Prior hyperparameters for the Bayesian hierarchical
 model: \code{lambda} is the variance multiplier for the population mean prior
-\eqn{\mu \sim \mathcal{N}(0, \lambda I)}; \code{nu0} and \code{phi0} are the
-degrees of freedom and scale multiplier for the Inverse-Wishart hyperprior on
-between-study covariance \eqn{\Sigma \sim \text{Inv-Wishart}(\nu_0, \phi_0 I)}.}
+\eqn{\mu \sim \mathcal{N}(0, \lambda I)} (default: \code{1e4}); \code{nu0} and
+\code{phi0} are the degrees of freedom and scale multiplier for the
+Inverse-Wishart hyperprior on between-study covariance
+\eqn{\Sigma \sim \text{Inv-Wishart}(\nu_0, \phi_0 I)} (defaults:
+\code{nu0 = 0.1}, \code{phi0 = 0.1}).}
 
 \item{theta_init_ipd, theta_init_nested, theta_init_subgroup, theta_init_partial}{Optional
 numeric matrices of starting values for study-specific parameters
 (\eqn{\theta_l}) across IPD studies, Type 1 nested AD studies, Type 2 subgroup
 AD studies, and Type 3 partial AD studies, respectively. Each matrix must have
 rows equal to the number of studies in that category and columns equal to the
-number of full-model terms.}
+number of full-model terms. Defaults to \code{NULL} for each, which initializes
+all starting values to zeros.}
 
 \item{mu_init, Sigma_init, sig2_init}{Optional starting values for the Markov
 chain: \code{mu_init} is a numeric vector for the population mean effect
-\eqn{\mu}; \code{Sigma_init} is a positive-definite matrix for between-study
-covariance \eqn{\Sigma}; and \code{sig2_init} is a positive scalar for residual
-error variance \eqn{\sigma^2}.}
+\eqn{\mu} (default: \code{NULL}, initialized to a zero vector);
+\code{Sigma_init} is a positive-definite matrix for between-study covariance
+\eqn{\Sigma} (default: \code{NULL}, initialized to the identity matrix); and
+\code{sig2_init} is a positive scalar for residual error variance
+\eqn{\sigma^2} (default: \code{1}).}
 
 \item{seed}{An integer random seed passed to \code{set.seed()} for exact
 reproducibility of MCMC chains. If \code{NULL}, the current RNG state is left

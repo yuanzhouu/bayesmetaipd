@@ -432,8 +432,7 @@ sim1_as_formula_data <- load_example
 #'   Metropolis-Hastings updates for DRM tilt parameters.
 #' @param diagonal_V Logical; if `TRUE` (default), keeps only the diagonal
 #'   variances of each AD covariance matrix (assuming zero off-diagonal
-#'   sampling covariances), which is standard practice when study-specific
-#'   coefficient covariances are omitted in published literature.
+#'   sampling covariances).
 #' @param burnin,mainrun Positive integers specifying MCMC sampling lengths:
 #'   `burnin` is the number of initial warm-up/burn-in iterations to discard,
 #'   and `mainrun` is the number of post-burn-in iterations retained for

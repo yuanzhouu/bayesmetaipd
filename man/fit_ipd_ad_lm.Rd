@@ -131,8 +131,7 @@ Metropolis-Hastings updates for DRM tilt parameters.}
 
 \item{diagonal_V}{Logical; if \code{TRUE} (default), keeps only the diagonal
 variances of each AD covariance matrix (assuming zero off-diagonal sampling
-covariances), which is standard practice when study-specific coefficient
-covariances are omitted in published literature.}
+covariances).}
 
 \item{burnin, mainrun}{Positive integers specifying MCMC sampling lengths:
 \code{burnin} is the number of initial warm-up/burn-in iterations to discard,

@@ -307,9 +307,11 @@ sim1_as_formula_data <- load_example
 #' @param formula Two-sided formula specifying the full target model for
 #'   Individual Participant Data (IPD), e.g., `Y ~ X1 + X2 + X1:X2` (or
 #'   `Y ~ X1 * X2`). This model represents the primary inferential target of
-#'   interest across all studies, where `Y` is the continuous response and
-#'   uppercase terms (such as `X1`, `X2`, and their interactions) constitute
-#'   the target design matrix.
+#'   interest across all studies: for each study \eqn{i}, the individual-level
+#'   continuous outcome is modeled as \eqn{Y_{ij} = X_{ij}^\top \beta_i + \epsilon_{ij}}
+#'   with a study-specific coefficient vector \eqn{\beta_i} and residual error
+#'   \eqn{\epsilon_{ij} \sim \mathcal{N}(0, \sigma^2)}, where \eqn{\beta_i} follows
+#'   a hierarchical random-effects distribution.
 #' @param ipd Data frame of Individual Patient Data (Individual Participant Data),
 #'   containing individual-level records from all available IPD studies. It must
 #'   contain the continuous response variable (`Y`), all predictors/covariates
@@ -320,10 +322,9 @@ sim1_as_formula_data <- load_example
 #' @param nested_formula One-sided formula defining the Type 1 working model
 #'   (nested/reduced model), e.g., `~ X1 + X2`. Type 1 Aggregate Data (AD)
 #'   studies fit a reduced working model that omits certain terms from the full
-#'   target model (e.g., omitting the interaction term `X1:X2`). The left-hand
-#'   side of the tilde (`~`) is omitted because individual outcome observations
-#'   are not directly available in AD studies; only the reported working
-#'   covariates need to be specified. Ignored if `ad_nested` is `NULL`.
+#'   target model (e.g., omitting the interaction term `X1:X2`). For simplicity,
+#'   the response variable `Y` on the left-hand side of the tilde (`~`) is
+#'   omitted. Ignored if `ad_nested` is `NULL`.
 #' @param ad_nested Data frame of summary statistics from Type 1 AD studies (one
 #'   row per study). Columns must include: (1) an optional study identifier column;
 #'   (2) columns for reported point estimates of the nested model coefficients

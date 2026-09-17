@@ -309,7 +309,8 @@ sim1_as_formula_data <- load_example
 #'   `Y ~ X1 * X2`). This model represents the primary inferential target of
 #'   interest across all studies: for each study \eqn{i}, the individual-level
 #'   continuous outcome is modeled as \eqn{Y_{ij} = X_{ij}^\top \beta_i + \epsilon_{ij}}
-#'   with a study-specific coefficient vector \eqn{\beta_i} and residual error
+#'   with a study-specific coefficient vector \eqn{\beta_i} (including a random
+#'   intercept by default) and residual error
 #'   \eqn{\epsilon_{ij} \sim \mathcal{N}(0, \sigma^2)}, where \eqn{\beta_i} follows
 #'   a hierarchical random-effects distribution.
 #' @param ipd Data frame of Individual Patient Data (Individual Participant Data),

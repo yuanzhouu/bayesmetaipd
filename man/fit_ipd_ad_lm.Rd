@@ -74,9 +74,12 @@ model coefficients matching \code{nested_reported} or terms in
 \code{nested_formula} (e.g., columns named \code{"coef_X1"}, \code{"coef_X2"});
 (3) standard errors in columns named \code{se_<term>} (e.g., \code{"se_X1"},
 \code{"se_X2"} or \code{"se_coef_X1"}, \code{"se_coef_X2"}); and (4)
-density-ratio summary columns \code{drm_mean} and \code{drm_var} containing the
-sample mean and variance-of-the-mean of the baseline covariate specified in
-\code{drm_formula}.}
+density-ratio summary columns \code{drm_mean} (sample mean \eqn{\bar{x}}) and
+\code{drm_var} (variance of the sample mean
+\eqn{\widehat{\mathrm{Var}}(\bar{x}) = s^2 / n = \mathrm{SE}^2}, where \eqn{s}
+is the sample standard deviation and \eqn{n} is the study sample size; note
+that it is \emph{not} the individual-level sample variance \eqn{s^2}) of the
+baseline covariate specified in \code{drm_formula}.}
 
 \item{nested_reported}{Character vector (or integer indices) indicating which
 coefficients from the Type 1 nested working model were published by the AD
@@ -120,8 +123,13 @@ adjustment.}
 the semi-parametric Density-Ratio Model (DRM), e.g., \code{~ X1}. The DRM uses
 exponential tilting to account for covariate shift (population heterogeneity)
 between AD and IPD study populations based on published aggregate moments
-(\code{drm_mean} and \code{drm_var}). If \code{NULL}, defaults to the first
-non-intercept covariate in the full target model.}
+\code{drm_mean} and \code{drm_var}. Here, \code{drm_mean} is the reported
+sample mean of the covariate (\eqn{\bar{x}}), and \code{drm_var} is the variance
+of the sample mean (\eqn{\widehat{\mathrm{Var}}(\bar{x}) = s^2 / n = \mathrm{SE}^2},
+computed as sample variance divided by study sample size, or squared standard
+error of the mean; it should \emph{not} be the individual-level sample variance
+\eqn{s^2}). If \code{NULL}, defaults to the first non-intercept covariate in
+the full target model.}
 
 \item{use_drm}{Logical; if \code{TRUE} (default), applies semi-parametric
 density-ratio modeling to adjust for covariate shift between IPD and AD

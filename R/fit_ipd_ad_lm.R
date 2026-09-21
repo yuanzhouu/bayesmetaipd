@@ -383,8 +383,11 @@ sim1_as_formula_data <- load_example
 #'   `nested_formula` (e.g., columns named `"coef_X1"`, `"coef_X2"`); (3)
 #'   standard errors in columns named `se_<term>` (e.g., `"se_X1"`, `"se_X2"`
 #'   or `"se_coef_X1"`, `"se_coef_X2"`); and (4) density-ratio summary columns
-#'   `drm_mean` and `drm_var` containing the sample mean and variance-of-the-mean
-#'   of the baseline covariate specified in `drm_formula`.
+#'   `drm_mean` (sample mean \eqn{\bar{x}}) and `drm_var` (variance of the
+#'   sample mean \eqn{\widehat{\mathrm{Var}}(\bar{x}) = s^2 / n = \mathrm{SE}^2},
+#'   where \eqn{s} is the sample standard deviation and \eqn{n} is the study
+#'   sample size; note that it is *not* the sample variance \eqn{s^2}) of the
+#'   baseline covariate specified in `drm_formula`.
 #' @param nested_reported Character vector (or integer indices) indicating which
 #'   coefficients from the Type 1 nested working model were published by the AD
 #'   studies. By default, all coefficients in `nested_formula` except the
@@ -420,8 +423,12 @@ sim1_as_formula_data <- load_example
 #'   in the semi-parametric Density-Ratio Model (DRM), e.g., `~ X1`. The DRM uses
 #'   exponential tilting to account for covariate shift (population heterogeneity)
 #'   between AD and IPD study populations based on published aggregate moments
-#'   (`drm_mean` and `drm_var`). If `NULL`, defaults to the first non-intercept
-#'   covariate in the full target model.
+#'   `drm_mean` and `drm_var`. Here, `drm_mean` is the reported sample mean of
+#'   the covariate (\eqn{\bar{x}}), and `drm_var` is the variance of the sample
+#'   mean (\eqn{\widehat{\mathrm{Var}}(\bar{x}) = s^2 / n = \mathrm{SE}^2}, computed as
+#'   sample variance divided by study sample size, or squared standard error;
+#'   it should *not* be the individual-level sample variance \eqn{s^2}). If `NULL`,
+#'   defaults to the first non-intercept covariate in the full target model.
 #' @param use_drm Logical; if `TRUE` (default), applies semi-parametric
 #'   density-ratio modeling to adjust for covariate shift between IPD and AD
 #'   populations. If `FALSE`, assumes homogeneous covariate distributions

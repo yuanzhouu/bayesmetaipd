@@ -11,3 +11,5 @@ src/*.dll
 src/*.exp
 src/*.lib
 src/*.pdb
+man/*.html
+man/*.pdf

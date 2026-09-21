@@ -102,8 +102,9 @@ test_that("sim1_as_formula_data matches cube dimensions", {
   expect_equal(nrow(d$ad_nested), 10)
   expect_equal(nrow(d$ad_subgroup), 10)
   expect_equal(nrow(d$ad_partial), 10)
-  expect_true(all(c("X1", "X2", "drm_mean", "drm_var") %in% names(d$ad_nested)))
-  expect_true(all(c("ind.1", "ind.2", "ind.3", "ind.4") %in% names(d$ad_subgroup)))
+  expect_true(all(c("coef_X1", "coef_X2", "se_coef_X1", "se_coef_X2", "drm_mean", "drm_var") %in% names(d$ad_nested)))
+  expect_true(all(c("mean_ind.1", "mean_ind.2", "mean_ind.3", "mean_ind.4") %in% names(d$ad_subgroup)))
+  expect_true(all(c("coef_X2", "coef_X1:X2", "se_coef_X2", "se_coef_X1:X2") %in% names(d$ad_partial)))
 })
 
 test_that("fit_ipd_ad_lm formula interface short run", {

@@ -265,13 +265,13 @@ load_example <- function() {
     as.matrix(dat$V_beta_cube[s, 2:3, 2:3])
   })
   ad_nested <- data.frame(
-    study    = t1,
-    X1       = dat$beta_mat[t1, 2],
-    X2       = dat$beta_mat[t1, 3],
-    se_X1    = vapply(V_nested, function(m) sqrt(m[1, 1]), numeric(1)),
-    se_X2    = vapply(V_nested, function(m) sqrt(m[2, 2]), numeric(1)),
-    drm_mean = vapply(t1, function(s) drm_stats(s)[["mean"]], 1),
-    drm_var  = vapply(t1, function(s) drm_stats(s)[["var"]], 1)
+    study      = t1,
+    coef_X1    = dat$beta_mat[t1, 2],
+    coef_X2    = dat$beta_mat[t1, 3],
+    se_coef_X1 = vapply(V_nested, function(m) sqrt(m[1, 1]), numeric(1)),
+    se_coef_X2 = vapply(V_nested, function(m) sqrt(m[2, 2]), numeric(1)),
+    drm_mean   = vapply(t1, function(s) drm_stats(s)[["mean"]], 1),
+    drm_var    = vapply(t1, function(s) drm_stats(s)[["var"]], 1)
   )
   ad_nested$V <- V_nested
 
@@ -280,17 +280,17 @@ load_example <- function() {
     as.matrix(dat$V_beta_cube[s, , ])
   })
   ad_subgroup <- data.frame(
-    study    = t2,
-    ind.1    = dat$beta_mat[t2, 1],
-    ind.2    = dat$beta_mat[t2, 2],
-    ind.3    = dat$beta_mat[t2, 3],
-    ind.4    = dat$beta_mat[t2, 4],
-    se_ind.1 = vapply(V_subgroup, function(m) sqrt(m[1, 1]), numeric(1)),
-    se_ind.2 = vapply(V_subgroup, function(m) sqrt(m[2, 2]), numeric(1)),
-    se_ind.3 = vapply(V_subgroup, function(m) sqrt(m[3, 3]), numeric(1)),
-    se_ind.4 = vapply(V_subgroup, function(m) sqrt(m[4, 4]), numeric(1)),
-    drm_mean = vapply(t2, function(s) drm_stats(s)[["mean"]], 1),
-    drm_var  = vapply(t2, function(s) drm_stats(s)[["var"]], 1)
+    study         = t2,
+    mean_ind.1    = dat$beta_mat[t2, 1],
+    mean_ind.2    = dat$beta_mat[t2, 2],
+    mean_ind.3    = dat$beta_mat[t2, 3],
+    mean_ind.4    = dat$beta_mat[t2, 4],
+    se_mean_ind.1 = vapply(V_subgroup, function(m) sqrt(m[1, 1]), numeric(1)),
+    se_mean_ind.2 = vapply(V_subgroup, function(m) sqrt(m[2, 2]), numeric(1)),
+    se_mean_ind.3 = vapply(V_subgroup, function(m) sqrt(m[3, 3]), numeric(1)),
+    se_mean_ind.4 = vapply(V_subgroup, function(m) sqrt(m[4, 4]), numeric(1)),
+    drm_mean      = vapply(t2, function(s) drm_stats(s)[["mean"]], 1),
+    drm_var       = vapply(t2, function(s) drm_stats(s)[["var"]], 1)
   )
   ad_subgroup$V <- V_subgroup
 
@@ -299,14 +299,14 @@ load_example <- function() {
     as.matrix(dat$V_beta_cube[s, 3:4, 3:4])
   })
   ad_partial <- data.frame(
-    study      = t3,
-    X2         = dat$beta_mat[t3, 3],
-    `X1:X2`    = dat$beta_mat[t3, 4],
-    se_X2      = vapply(V_partial, function(m) sqrt(m[1, 1]), numeric(1)),
-    `se_X1:X2` = vapply(V_partial, function(m) sqrt(m[2, 2]), numeric(1)),
-    drm_mean   = vapply(t3, function(s) drm_stats(s)[["mean"]], 1),
-    drm_var    = vapply(t3, function(s) drm_stats(s)[["var"]], 1),
-    check.names = FALSE
+    study           = t3,
+    coef_X2         = dat$beta_mat[t3, 3],
+    `coef_X1:X2`    = dat$beta_mat[t3, 4],
+    se_coef_X2      = vapply(V_partial, function(m) sqrt(m[1, 1]), numeric(1)),
+    `se_coef_X1:X2` = vapply(V_partial, function(m) sqrt(m[2, 2]), numeric(1)),
+    drm_mean        = vapply(t3, function(s) drm_stats(s)[["mean"]], 1),
+    drm_var         = vapply(t3, function(s) drm_stats(s)[["var"]], 1),
+    check.names     = FALSE
   )
   ad_partial$V <- V_partial
 

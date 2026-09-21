@@ -98,8 +98,6 @@ print(fit)
 colMeans(fit$posterior_mu)
 ```
 
-For detailed mathematical specifications and simulation comparisons, see [`docs/fit_ipd_ad_lm_results.md`](docs/fit_ipd_ad_lm_results.md).
-
 ---
 
 ## License

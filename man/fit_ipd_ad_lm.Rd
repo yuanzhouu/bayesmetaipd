@@ -203,20 +203,24 @@ containing post-burn-in MCMC samples and model metadata:
 Objects of class \code{bayesmetaipd_fit} have a dedicated \code{print} method.
 }
 \examples{
+\donttest{
 d <- load_example()
 fit <- fit_ipd_ad_lm(
-  formula = d$formula,
-  ipd = d$ipd,
-  study = d$study,
-  nested_formula = d$nested_formula,
-  ad_nested = d$ad_nested,
-  nested_reported = d$nested_reported,
-  subgroup = d$subgroup,
-  ad_subgroup = d$ad_subgroup,
-  partial_terms = d$partial_terms,
-  ad_partial = d$ad_partial,
-  drm_formula = d$drm_formula,
-  burnin = 1, mainrun = 2, verbose = FALSE, seed = 1
+  formula         = d$formula,              # Full model: Y ~ X1 * X2
+  ipd             = d$ipd,                  # Individual participant dataset
+  study           = d$study,                # Study identifier column
+  nested_formula  = d$nested_formula,       # Type 1 AD: nested working formula (~ X1 + X2)
+  ad_nested       = d$ad_nested,            # Type 1 AD table (uses default non-intercept terms)
+  subgroup        = d$subgroup,             # Type 2 AD: 4 subgroup partition formulas
+  ad_subgroup     = d$ad_subgroup,          # Type 2 AD table
+  partial_terms   = d$partial_terms,        # Type 3 AD: reported subset c("X2", "X1:X2")
+  ad_partial      = d$ad_partial,           # Type 3 AD table
+  drm_formula     = d$drm_formula,          # Density-ratio covariate (~ X1)
+  burnin          = 1000, 
+  mainrun         = 2000, 
+  engine          = "cpp"                   # Accelerated C++ MCMC sampler
 )
+print(fit)
 colMeans(fit$posterior_mu)
+}
 }

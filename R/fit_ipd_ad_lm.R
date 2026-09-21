@@ -223,8 +223,8 @@ match_reported <- function(requested, available, label) {
 
 #' Load example formula-style dataset from Simulation Study 1
 #'
-#' Builds an IPD data frame plus Type 1/2/3 AD tables with explicit coefficients,
-#' standard errors (`se_*`), covariance matrices (`V`), and density-ratio
+#' Builds an IPD data frame plus Type 1/2/3 AD tables with explicit coefficients
+#' (`coef_*` / `mean_*`), standard errors (`se_coef_*` / `se_mean_*`), and density-ratio
 #' moments (`drm_mean`, `drm_var`) from [sim1_ipdad_rep1].
 #' Uses the official full model `Y ~ X1 * X2`, nested model `~ X1 + X2`,
 #' four `(X1>0) x X2` subgroups, and partial terms `X2` and `X1:X2`.
@@ -273,7 +273,6 @@ load_example <- function() {
     drm_mean   = vapply(t1, function(s) drm_stats(s)[["mean"]], 1),
     drm_var    = vapply(t1, function(s) drm_stats(s)[["var"]], 1)
   )
-  ad_nested$V <- V_nested
 
   t2 <- which(type_vec == 2L)
   V_subgroup <- lapply(t2, function(s) {
@@ -292,7 +291,6 @@ load_example <- function() {
     drm_mean      = vapply(t2, function(s) drm_stats(s)[["mean"]], 1),
     drm_var       = vapply(t2, function(s) drm_stats(s)[["var"]], 1)
   )
-  ad_subgroup$V <- V_subgroup
 
   t3 <- which(type_vec == 3L)
   V_partial <- lapply(t3, function(s) {
@@ -308,7 +306,6 @@ load_example <- function() {
     drm_var         = vapply(t3, function(s) drm_stats(s)[["var"]], 1),
     check.names     = FALSE
   )
-  ad_partial$V <- V_partial
 
   list(
     formula = Y ~ X1 * X2,
@@ -494,22 +491,26 @@ sim1_as_formula_data <- load_example
 #'   Objects of class `bayesmetaipd_fit` have a dedicated `print` method.
 #'
 #' @examples
+#' \donttest{
 #' d <- load_example()
 #' fit <- fit_ipd_ad_lm(
-#'   formula = d$formula,
-#'   ipd = d$ipd,
-#'   study = d$study,
-#'   nested_formula = d$nested_formula,
-#'   ad_nested = d$ad_nested,
-#'   nested_reported = d$nested_reported,
-#'   subgroup = d$subgroup,
-#'   ad_subgroup = d$ad_subgroup,
-#'   partial_terms = d$partial_terms,
-#'   ad_partial = d$ad_partial,
-#'   drm_formula = d$drm_formula,
-#'   burnin = 1, mainrun = 2, verbose = FALSE, seed = 1
+#'   formula         = d$formula,              # Full model: Y ~ X1 * X2
+#'   ipd             = d$ipd,                  # Individual participant dataset
+#'   study           = d$study,                # Study identifier column
+#'   nested_formula  = d$nested_formula,       # Type 1 AD: nested working formula (~ X1 + X2)
+#'   ad_nested       = d$ad_nested,            # Type 1 AD table (uses default non-intercept terms)
+#'   subgroup        = d$subgroup,             # Type 2 AD: 4 subgroup partition formulas
+#'   ad_subgroup     = d$ad_subgroup,          # Type 2 AD table
+#'   partial_terms   = d$partial_terms,        # Type 3 AD: reported subset c("X2", "X1:X2")
+#'   ad_partial      = d$ad_partial,           # Type 3 AD table
+#'   drm_formula     = d$drm_formula,          # Density-ratio covariate (~ X1)
+#'   burnin          = 1000, 
+#'   mainrun         = 2000, 
+#'   engine          = "cpp"                   # Accelerated C++ MCMC sampler
 #' )
+#' print(fit)
 #' colMeans(fit$posterior_mu)
+#' }
 #'
 #' @export
 fit_ipd_ad_lm <- function(formula,

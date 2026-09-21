@@ -11,9 +11,9 @@ A list with \code{ipd}, \code{study}, \code{formula}, \code{nested_formula}, \co
 \code{nested_reported}, \code{subgroup}, \code{ad_subgroup}, \code{partial_terms}, \code{ad_partial}, \code{drm_formula}.
 }
 \description{
-Builds an IPD data frame plus Type 1/2/3 AD tables with explicit coefficients,
-standard errors (\verb{se_*}), covariance matrices (\code{V}), and density-ratio
-moments (\code{drm_mean}, \code{drm_var}) from \link{sim1_ipdad_rep1}.
+Builds an IPD data frame plus Type 1/2/3 AD tables with explicit coefficients
+(\verb{coef_*} / \verb{mean_*}), standard errors (\verb{se_coef_*} / \verb{se_mean_*}),
+and density-ratio moments (\code{drm_mean}, \code{drm_var}) from \link{sim1_ipdad_rep1}.
 Uses the official full model \code{Y ~ X1 * X2}, nested model \code{~ X1 + X2},
 four \verb{(X1>0) x X2} subgroups, and partial terms \code{X2} and \code{X1:X2}.
 }

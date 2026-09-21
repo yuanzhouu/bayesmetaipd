@@ -58,10 +58,10 @@ head(d$ad_nested, 3)
 
 # --- 3. Type 2 AD: Subgroup means (sample means, SEs, and DRM summary stats) ---
 head(d$ad_subgroup, 3)
-#>   study mean_ind.1 mean_ind.2 mean_ind.3 mean_ind.4 se_mean_ind.1 se_mean_ind.2   drm_mean     drm_var
-#> 1    11   1.244086   3.863963  0.6635194  0.7109921     0.1551659     0.1515569  0.7275264 0.002923500
-#> 2    12   1.798221   2.594988  0.3522915 -0.1966817     0.1526580     0.1574297  0.2764594 0.002345003
-#> 3    13   2.690740   3.975390  1.7192349  2.8468055     0.1491089     0.1439359 -0.1694563 0.002561947
+#>   study mean_ind.1 mean_ind.2 mean_ind.3 mean_ind.4 se_mean_ind.1 se_mean_ind.2 se_mean_ind.3 se_mean_ind.4   drm_mean     drm_var
+#> 1    11   1.244086   3.863963  0.6635194  0.7109921     0.1551659     0.1515569     0.3534072     0.3778082  0.7275264 0.002923500
+#> 2    12   1.798221   2.594988  0.3522915 -0.1966817     0.1526580     0.1574297     0.2054263     0.2175203  0.2764594 0.002345003
+#> 3    13   2.690740   3.975390  1.7192349  2.8468055     0.1491089     0.1439359     0.1242996     0.1275856 -0.1694563 0.002561947
 
 # --- 4. Type 3 AD: Partial full model (subset of terms, SEs, and DRM summary stats) ---
 head(d$ad_partial, 3)
